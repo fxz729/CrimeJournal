@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.auth import get_current_user
 from app.config import settings
 from app.services import CourtListenerClient, AIRouter, AIServiceCache, CacheService
-from app.services.ai import ClaudeService, DeepSeekService, TaskType
+from app.services.ai import MiniMaxService, DeepSeekService, TaskType
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -176,9 +176,18 @@ async def get_ai_router() -> AIRouter:
     """获取AI路由器"""
     global _ai_router
     if _ai_router is None:
-        claude_service = ClaudeService(settings.claude_api_key)
-        deepseek_service = DeepSeekService(settings.deepseek_api_key)
-        _ai_router = AIRouter(claude_service, deepseek_service)
+        # MiniMax用于核心功能（总结、实体提取）
+        minimax_service = MiniMaxService(
+            api_key=settings.minimax_api_key,
+            model=settings.minimax_model,
+            base_url=settings.minimax_base_url
+        )
+        # DeepSeek用于辅助功能（关键词、分类）
+        deepseek_service = DeepSeekService(
+            api_key=settings.deepseek_api_key,
+            base_url=settings.deepseek_base_url
+        )
+        _ai_router = AIRouter(minimax_service, deepseek_service)
         await _ai_router.initialize_all()
     return _ai_router
 
