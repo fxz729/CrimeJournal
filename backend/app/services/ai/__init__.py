@@ -1,9 +1,7 @@
-"""
-AI服务模块 - 统一使用MiniMax
-"""
+"""AI服务模块 - 统一使用MiniMax"""
 from .base import AIServiceBase
 from .minimax import MiniMaxService
-from .router import AIRouter
+from .router import AIRouter, TaskType
 
 # 向后兼容保留
 from .deepseek import DeepSeekService
@@ -15,4 +13,5 @@ __all__ = [
     "DeepSeekService",   # 保留但不再使用
     "ClaudeService",    # 保留但不再使用
     "AIRouter",
+    "TaskType",         # 任务类型枚举
 ]

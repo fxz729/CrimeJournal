@@ -12,7 +12,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, EmailStr, Field
 from passlib.context import CryptContext
-import jwt
+from jose import jwt, JWTError
 
 from app.config import settings
 
