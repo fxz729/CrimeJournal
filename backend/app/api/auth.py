@@ -164,7 +164,7 @@ async def get_current_user(
     return {"id": user_id, "email": email}
 
 
-def get_optional_user(
+async def get_optional_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(
         HTTPBearer(auto_error=False)
     )
