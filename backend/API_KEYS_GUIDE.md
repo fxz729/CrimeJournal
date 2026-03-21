@@ -16,9 +16,9 @@
 
 ---
 
-## 2. MiniMax API Key（推荐）
+## 2. MiniMax API Key（统一AI服务）
 
-**用途**：AI案例总结、实体提取
+**用途**：案例总结、实体提取、关键词提取、分类等全部AI功能
 
 **获取步骤**：
 1. 访问 https://platform.minimaxi.com/
@@ -29,22 +29,7 @@
 
 **费用**：价格实惠，国内直连
 
-**模型**：`MiniMax-Text-01`
-
----
-
-## 3. DeepSeek API Key（可选）
-
-**用途**：关键词提取、查询理解（可选用MiniMax代替）
-
-**获取步骤**：
-1. 访问 https://platform.deepseek.com/
-2. 注册/登录账号
-3. 进入 API Keys 页面
-4. 点击 "Create API Key"
-5. 复制生成的Key
-
-**费用**：V3模型 $0.14/百万tokens
+**模型**：`MiniMax-Text-02`（M2.7最新模型）
 
 ---
 
@@ -58,13 +43,10 @@ cp .env.example .env
 编辑 `.env` 文件，填入你的密钥：
 
 ```env
-# ===== MiniMax（主要AI服务）=====
+# ===== MiniMax（统一AI服务）=====
 MINIMAX_API_KEY=你的MiniMax密钥
 MINIMAX_BASE_URL=https://api.minimax.chat/v1
-MINIMAX_MODEL=MiniMax-Text-01
-
-# ===== DeepSeek（可选）=====
-DEEPSEEK_API_KEY=你的DeepSeek密钥
+MINIMAX_MODEL=MiniMax-Text-02
 
 # ===== CourtListener ======
 COURTLISTENER_API_TOKEN=你的CourtListener密钥
@@ -84,8 +66,8 @@ cd backend
 python -c "
 from app.config import settings
 print('MiniMax:', '✓' if settings.minimax_api_key else '✗')
-print('DeepSeek:', '✓' if settings.deepseek_api_key else '✗')
 print('CourtListener:', '✓' if settings.courtlistener_api_token else '✗')
+print('Model:', settings.minimax_model)
 "
 ```
 

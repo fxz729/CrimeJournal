@@ -1,16 +1,18 @@
-"""AI服务模块"""
+"""
+AI服务模块 - 统一使用MiniMax
+"""
 from .base import AIServiceBase
 from .minimax import MiniMaxService
-from .deepseek import DeepSeekService
 from .router import AIRouter
 
-# 保留ClaudeService以兼容旧代码
+# 向后兼容保留
+from .deepseek import DeepSeekService
 from .claude import ClaudeService
 
 __all__ = [
     "AIServiceBase",
-    "MiniMaxService",  # 主要服务（已替换Claude）
-    "DeepSeekService",
-    "ClaudeService",   # 保留但不再使用
+    "MiniMaxService",   # 主要服务
+    "DeepSeekService",   # 保留但不再使用
+    "ClaudeService",    # 保留但不再使用
     "AIRouter",
 ]

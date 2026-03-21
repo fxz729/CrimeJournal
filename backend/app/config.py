@@ -8,18 +8,18 @@ from typing import Optional
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # MiniMax Configuration (用于案例总结、实体提取)
+    # MiniMax Configuration (统一AI服务)
     minimax_api_key: str = ""
     minimax_base_url: str = "https://api.minimax.chat/v1"
-    minimax_model: str = "MiniMax-Text-01"
+    minimax_model: str = "MiniMax-Text-02"  # 最新M2.7模型
 
-    # DeepSeek Configuration (用于关键词提取、分类)
+    # DeepSeek Configuration (已废弃，统一使用MiniMax)
     deepseek_api_key: str = ""
     deepseek_base_url: str = "https://api.deepseek.com/v1"
 
-    # 兼容旧配置（可选）
-    claude_api_key: str = ""  # 已废弃，使用MiniMax
-    claude_base_url: Optional[str] = None  # 已废弃
+    # 兼容旧配置（已废弃）
+    claude_api_key: str = ""
+    claude_base_url: Optional[str] = None
 
     # CourtListener Configuration
     courtlistener_api_token: str = ""
