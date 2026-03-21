@@ -1,9 +1,8 @@
-"""AI服务智能路由器"""
+"""AI服务智能路由器 - 使用 MiniMax 作为主要服务"""
 import logging
 from typing import Dict, List, Optional, Any
 from enum import Enum
-from .claude import ClaudeService
-from .deepseek import DeepSeekService
+from .minimax import MiniMaxService
 from .base import AIServiceBase
 
 logger = logging.getLogger(__name__)
@@ -15,62 +14,51 @@ class TaskType(Enum):
     ENTITY_EXTRACTION = "entity_extraction"    # 实体提取
     KEYWORD_EXTRACTION = "keyword_extraction"  # 关键词提取
     CLASSIFICATION = "classification"          # 文本分类
-    GENERAL_QA = "general_qa"                  # 通用问答
+    GENERAL_QA = "general_qa"                # 通用问答
 
 
 class AIRouter:
     """
     AI服务智能路由器
 
-    根据任务类型智能选择最佳AI服务，并实现降级策略
+    使用 MiniMax 作为唯一AI服务，统一提供所有AI功能
     """
 
-    # 任务类型到服务的映射（优先级从高到低）
+    # 任务类型到服务的映射（全部使用 MiniMax）
     TASK_SERVICE_MAP = {
         TaskType.CASE_SUMMARIZATION: [
-            ("claude", 0.9),    # Claude擅长总结
-            ("deepseek", 0.6)   # DeepSeek作为降级
+            ("minimax", 1.0),    # MiniMax 擅长总结
         ],
         TaskType.ENTITY_EXTRACTION: [
-            ("claude", 0.95),   # Claude擅长实体提取
-            ("deepseek", 0.5)   # DeepSeek效果较差
+            ("minimax", 1.0),    # MiniMax 擅长实体提取
         ],
         TaskType.KEYWORD_EXTRACTION: [
-            ("deepseek", 0.9),  # DeepSeek擅长关键词提取
-            ("claude", 0.7)     # Claude作为降级
+            ("minimax", 1.0),    # MiniMax 擅长关键词提取
         ],
         TaskType.CLASSIFICATION: [
-            ("deepseek", 0.9),  # DeepSeek擅长分类
-            ("claude", 0.75)    # Claude作为降级
+            ("minimax", 1.0),    # MiniMax 擅长分类
         ],
         TaskType.GENERAL_QA: [
-            ("claude", 0.85),   # Claude通用能力强
-            ("deepseek", 0.8)   # DeepSeek也不错
+            ("minimax", 1.0),    # MiniMax 通用能力强
         ]
     }
 
     def __init__(
         self,
-        claude_service: Optional[ClaudeService] = None,
-        deepseek_service: Optional[DeepSeekService] = None
+        minimax_service: Optional[MiniMaxService] = None,
     ):
         """
         初始化路由器
 
         Args:
-            claude_service: Claude服务实例
-            deepseek_service: DeepSeek服务实例
+            minimax_service: MiniMax服务实例
         """
         self.services: Dict[str, AIServiceBase] = {}
         self.service_status: Dict[str, bool] = {}
 
-        if claude_service:
-            self.services["claude"] = claude_service
-            self.service_status["claude"] = True
-
-        if deepseek_service:
-            self.services["deepseek"] = deepseek_service
-            self.service_status["deepseek"] = True
+        if minimax_service:
+            self.services["minimax"] = minimax_service
+            self.service_status["minimax"] = True
 
         logger.info(f"路由器初始化完成，可用服务: {list(self.services.keys())}")
 
@@ -157,25 +145,7 @@ class AIRouter:
 
         except Exception as e:
             logger.error(f"服务 {service.__class__.__name__} 调用失败: {str(e)}")
-
-            # 标记服务不可用
-            service_name = "claude" if isinstance(service, ClaudeService) else "deepseek"
-            self.service_status[service_name] = False
-
-            # 尝试降级到其他服务
-            logger.info("尝试降级到其他服务...")
-            fallback_service = self._select_service(task_type)
-
-            if fallback_service and fallback_service != service:
-                try:
-                    method = getattr(fallback_service, method_name)
-                    result = await method(**kwargs)
-                    logger.info(f"降级到 {fallback_service.__class__.__name__} 成功")
-                    return result
-                except Exception as fallback_error:
-                    logger.error(f"降级服务也失败: {str(fallback_error)}")
-
-            raise RuntimeError(f"所有服务均失败: {str(e)}")
+            raise RuntimeError(f"MiniMax服务调用失败: {str(e)}")
 
     async def summarize_case(self, text: str, max_length: int = 500) -> str:
         """案例总结"""

@@ -14,10 +14,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy import create_engine, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.auth import get_current_user
+from app.api.auth import get_current_user, get_optional_user, FAKE_USERS_DB
+from app.middleware.usage import check_search_access, get_user_daily_usage, get_daily_limit, increment_user_usage
 from app.config import settings
 from app.services import CourtListenerClient, AIRouter, AIServiceCache, CacheService
-from app.services.ai import MiniMaxService, DeepSeekService, TaskType
+from app.services.ai import MiniMaxService, TaskType
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -182,8 +183,8 @@ async def get_ai_router() -> AIRouter:
             model=settings.minimax_model,
             base_url=settings.minimax_base_url
         )
-        # DeepSeek保留但作为备用（目前统一用MiniMax）
-        _ai_router = AIRouter(minimax_service, minimax_service)  # 主备都用MiniMax
+        # 统一使用MiniMax（M2.7最新模型）
+        _ai_router = AIRouter(minimax_service=minimax_service)
         await _ai_router.initialize_all()
     return _ai_router
 
@@ -212,7 +213,7 @@ async def search_cases(
     date_max: Optional[str] = Query(None, description="结束日期 (YYYY-MM-DD)"),
     page: int = Query(1, ge=1, description="页码"),
     page_size: int = Query(20, ge=1, le=100, description="每页数量"),
-    current_user: dict = Depends(get_current_user),
+    current_user: Optional[dict] = Depends(get_optional_user),
 ):
     """
     搜索法律案例
@@ -224,7 +225,22 @@ async def search_cases(
     - 分页
 
     需要JWT认证
+
+    用量限制：
+    - Free 用户每天 10 次搜索
+    - Pro 用户无限制
     """
+    # 用量限制检查
+    if current_user:
+        user_id = current_user["id"]
+        # 获取用户订阅等级
+        user_info = FAKE_USERS_DB.get(user_id)
+        subscription_tier = user_info.get("subscription_tier", "free") if user_info else "free"
+
+        # 检查搜索限制（仅记录，不阻止，因为中间件已经记录）
+        # 实际限制由 check_search_access 抛出 429
+        check_search_access(user_id, subscription_tier)
+
     try:
         client = await get_courtlistener()
 
@@ -254,7 +270,8 @@ async def search_cases(
             )
 
         # TODO: 保存搜索历史
-        logger.info(f"用户 {current_user['email']} 搜索: {q}, 结果: {result.get('count', 0)}")
+        user_email = current_user['email'] if current_user else 'anonymous'
+        logger.info(f"用户 {user_email} 搜索: {q}, 结果: {result.get('count', 0)}")
 
         return SearchResponse(
             total=result.get("count", 0),
@@ -279,7 +296,7 @@ async def search_cases(
 )
 async def get_case_detail(
     case_id: int,
-    current_user: dict = Depends(get_current_user),
+    current_user: Optional[dict] = Depends(get_optional_user),
 ):
     """
     获取案例详情
@@ -352,7 +369,7 @@ async def summarize_case(
     """
     AI案例总结
 
-    使用Claude AI生成案例总结，支持缓存
+    使用MiniMax AI生成案例总结，支持缓存
 
     需要JWT认证
     """
@@ -426,7 +443,7 @@ async def extract_entities(
     """
     AI实体提取
 
-    使用Claude AI从案例文本中提取关键实体（当事人、法院、法官等）
+    使用MiniMax AI从案例文本中提取关键实体（当事人、法院、法官等）
 
     需要JWT认证
     """
@@ -500,7 +517,7 @@ async def extract_keywords(
     """
     AI关键词提取
 
-    使用DeepSeek AI从案例文本中提取关键词
+    使用MiniMax AI从案例文本中提取关键词
 
     需要JWT认证
     """
@@ -569,7 +586,7 @@ async def extract_keywords(
 async def find_similar_cases(
     case_id: int,
     limit: int = Query(5, ge=1, le=20, description="返回数量"),
-    current_user: dict = Depends(get_current_user),
+    current_user: Optional[dict] = Depends(get_optional_user),
 ):
     """
     查找相似案例

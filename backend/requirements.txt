@@ -4,7 +4,7 @@ uvicorn[standard]==0.42.0
 
 # Database
 sqlalchemy==2.0.48
-asyncpg==0.31.0
+aiosqlite==0.20.0
 alembic==1.18.4
 
 # Environment & Config
@@ -12,20 +12,18 @@ python-dotenv==1.2.2
 pydantic==2.12.5
 pydantic-settings==2.13.1
 
-# HTTP Client
+# HTTP Client (用于 MiniMax API 调用)
 httpx==0.26.0
-
-# AI Services
-anthropic==0.18.1
 
 # Authentication
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt>=4.0.1,<5.0.0
 
 # Caching
 redis==5.0.1
 
-# Local Embedding Model
+# Local Embedding Model (免费，无需 API key)
 sentence-transformers==5.3.0
 
 # Testing
@@ -38,5 +36,3 @@ black==24.1.1
 flake8==7.0.0
 mypy==1.19.1
 email-validator==2.3.0
-passlib==1.7.4
-python-jose==3.3.0

@@ -117,11 +117,11 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
             <div className="bg-white p-6 rounded-xl border">
               <h3 className="text-xl font-semibold mb-2">{t('home.pricing.free')}</h3>
-              <p className="text-3xl font-bold mb-4">$0<span className="text-base font-normal text-gray-500">/month</span></p>
+              <p className="text-3xl font-bold mb-4">$0<span className="text-base font-normal text-gray-500">{t('home.pricing.perMonth')}</span></p>
               <ul className="text-left space-y-2 text-gray-600 mb-6">
-                <li>10 searches per day</li>
-                <li>Basic case information</li>
-                <li>Search history</li>
+                <li>{t('home.pricing.free.searches')}</li>
+                <li>{t('home.pricing.free.basic')}</li>
+                <li>{t('home.pricing.free.history')}</li>
               </ul>
               <Link
                 to="/register"
@@ -133,12 +133,12 @@ export default function Home() {
 
             <div className="bg-primary-50 p-6 rounded-xl border-2 border-primary-200">
               <h3 className="text-xl font-semibold mb-2 text-primary-900">{t('home.pricing.pro')}</h3>
-              <p className="text-3xl font-bold mb-4">$50<span className="text-base font-normal text-gray-500">/month</span></p>
+              <p className="text-3xl font-bold mb-4">$50<span className="text-base font-normal text-gray-500">{t('home.pricing.perMonth')}</span></p>
               <ul className="text-left space-y-2 text-gray-700 mb-6">
-                <li>Unlimited searches</li>
-                <li>AI case summaries</li>
-                <li>Entity extraction</li>
-                <li>Similar case discovery</li>
+                <li>{t('home.pricing.pro.unlimited')}</li>
+                <li>{t('home.pricing.pro.summaries')}</li>
+                <li>{t('home.pricing.pro.entities')}</li>
+                <li>{t('home.pricing.pro.similar')}</li>
               </ul>
               <Link
                 to="/register?plan=pro"
@@ -158,8 +158,8 @@ export default function Home() {
             <Scale className="h-6 w-6 text-white" />
             <span className="font-serif text-lg text-white">CrimeJournal</span>
           </div>
-          <p>AI-Powered Legal Case Research Platform</p>
-          <p className="mt-4 text-sm">&copy; 2024 CrimeJournal. All rights reserved.</p>
+          <p>{t('footer.tagline')}</p>
+          <p className="mt-4 text-sm">&copy; {new Date().getFullYear()} CrimeJournal. {t('footer.rights')}</p>
         </div>
       </footer>
     </div>

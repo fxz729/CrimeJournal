@@ -8,37 +8,36 @@
 
 ## Key Features
 
-- **🔍 Smart Search** - Natural language search across millions of legal cases from CourtListener
-- **🤖 AI Summaries** - Claude-powered case summarization for quick understanding
-- **📋 Entity Extraction** - Automatically extract parties, dates, statutes, and legal terms
-- **🔗 Similar Cases** - AI-powered similarity search to find related precedents
-- **💾 Search History** - Track and revisit your research
-- **⭐ Favorites** - Save important cases for quick access
-- **📱 Responsive Design** - Works on desktop and mobile
+- **Smart Search** - Natural language search across millions of legal cases from CourtListener
+- **AI Summaries** - MiniMax-powered case summarization for quick understanding
+- **Entity Extraction** - Automatically extract parties, dates, statutes, and legal terms
+- **Similar Cases** - AI-powered similarity search to find related precedents
+- **Search History** - Track and revisit your research
+- **Favorites** - Save important cases for quick access
+- **Responsive Design** - Works on desktop and mobile
 
 ## Architecture
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌────────────────┐
-│   Browser   │────▶│    Vercel    │────▶│     Render     │
-│  (React)   │     │   (Frontend) │     │  (FastAPI)     │
-└─────────────┘     └──────────────┘     └───────┬────────┘
-                                                 │
-                         ┌───────────────────────┼───────────────────────┐
-                         │                       │                       │
-                         ▼                       ▼                       ▼
-                  ┌─────────────┐         ┌─────────────┐         ┌─────────────┐
-                  │   Claude    │         │  DeepSeek   │         │ CourtListener│
-                  │    API      │         │    API      │         │     API      │
-                  │ (Summarize) │         │ (Keywords)  │         │  (Cases)     │
-                  └─────────────┘         └─────────────┘         └─────────────┘
++---------+     +---------+     +--------+
+| Browser|---->| Vercel  |---->| Render |
+| React  |     |Frontend |     | FastAPI|
++---------+     +---------+     +----+---+
+                                   |
+                    +--------------+---------------+
+                    |              |               |
+                    v              v               v
+              +----------+  +-------------+  +-----------+
+              | MiniMax  |  |CourtListener|  | PostgreSQL|
+              |   API    |  |    API     |  | (Supabase)|
+              +----------+  +-------------+  +-----------+
 ```
 
 ## Tech Stack
 
 ### Backend
 - **Python 3.11+** - FastAPI, SQLAlchemy, Pydantic
-- **AI Services** - Claude (core) + DeepSeek (auxiliary)
+- **AI Services** - MiniMax (unified AI service)
 - **Database** - PostgreSQL (Supabase) + SQLite (local)
 - **Cache** - Redis (Upstash)
 - **Embeddings** - Sentence-Transformers (local, free)
@@ -66,8 +65,7 @@
    - [Render](https://render.com) - Backend deployment
    - [Supabase](https://supabase.com) - Database
    - [CourtListener](https://www.courtlistener.com) - Legal data
-   - [Anthropic](https://console.anthropic.com) - Claude API
-   - [DeepSeek](https://platform.deepseek.com) - DeepSeek API
+   - [MiniMax](https://platform.minimax.chat) - AI API
 
 2. **Local Environment**:
    - Python 3.11+
@@ -100,12 +98,10 @@ npm run dev
 Create `backend/.env` with:
 
 ```env
-# Claude (for summaries & entities)
-CLAUDE_API_KEY=sk-ant-xxx
-
-# DeepSeek (for keywords & classification)
-DEEPSEEK_API_KEY=sk-xxx
-DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
+# MiniMax (for summaries, entities, keywords)
+MINIMAX_API_KEY=your_minimax_api_key_here
+MINIMAX_BASE_URL=https://api.minimax.chat/v1
+MINIMAX_MODEL=MiniMax-Text-02
 
 # CourtListener (free legal data)
 COURTLISTENER_API_TOKEN=your_token
@@ -157,8 +153,7 @@ EMBEDDING_MODEL=all-MiniLM-L6-v2
 3. Add secrets to GitHub Actions:
    - `RENDER_API_KEY`
    - `VERCEL_TOKEN`
-   - `CLAUDE_API_KEY`
-   - `DEEPSEEK_API_KEY`
+   - `MINIMAX_API_KEY`
    - `COURTLISTENER_API_TOKEN`
 4. GitHub Actions will auto-deploy on push
 
@@ -176,7 +171,7 @@ cd frontend
 vercel --prod
 ```
 
-## Pricing
+## Subscription Plans
 
 | Plan | Price | Features |
 |------|-------|----------|
@@ -193,7 +188,7 @@ CrimeJournal/
 │   │   ├── api/          # API routes
 │   │   ├── models/       # Database models
 │   │   ├── services/     # Business logic
-│   │   │   ├── ai/       # AI service implementations
+│   │   │   ├── ai/       # MiniMax AI service
 │   │   │   ├── courtlistener.py
 │   │   │   └── cache.py
 │   │   ├── utils/        # Utilities
@@ -231,9 +226,8 @@ pytest --cov=app --cov-report=html
 | Vercel (Frontend) | $0 |
 | Render (Backend) | $0 |
 | Supabase (Database) | $0 |
-| Claude API | ~$5-10 |
-| DeepSeek API | ~$1-3 |
-| **Total** | **$6-13/mo** |
+| MiniMax API | ~$3-8 |
+| **Total** | **$3-8/mo** |
 
 ## Contributing
 
@@ -250,8 +244,7 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) for deta
 ## Acknowledgments
 
 - [CourtListener](https://www.courtlistener.com) - Free legal case data
-- [Anthropic Claude](https://console.anthropic.com) - AI capabilities
-- [DeepSeek](https://platform.deepseek.com) - Cost-effective AI
+- [MiniMax](https://platform.minimax.chat) - AI capabilities
 - [Supabase](https://supabase.com) - Database infrastructure
 - [Vercel](https://vercel.com) - Frontend hosting
 - [Render](https://render.com) - Backend hosting

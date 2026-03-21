@@ -6,7 +6,10 @@ on:
       - main
     paths:
       - 'frontend/**'
+      - 'vercel.json'
       - '.github/workflows/frontend.yml'
+
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -30,19 +33,21 @@ jobs:
         run: npm ci
         working-directory: ./frontend
 
-      - name: Type Check
-        run: npm run typecheck || true
+      - name: Build Frontend
+        run: npm run build
         working-directory: ./frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://crimejournal-api.onrender.com' }}
 
       - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+        uses: nwtgck/actions-vercel@v1
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://crimejournal-api.onrender.com' }}
 
   deploy-preview:
     name: Deploy Preview (PR)
@@ -63,11 +68,17 @@ jobs:
         run: npm ci
         working-directory: ./frontend
 
+      - name: Build Frontend
+        run: npm run build
+        working-directory: ./frontend
+        env:
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://crimejournal-api.onrender.com' }}
+
       - name: Deploy Preview to Vercel
-        uses: amondnet/vercel-action@v25
+        uses: nwtgck/actions-vercel@v1
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
         env:
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL || 'https://crimejournal-api.onrender.com' }}

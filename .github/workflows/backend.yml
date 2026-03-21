@@ -6,7 +6,10 @@ on:
       - main
     paths:
       - 'backend/**'
+      - 'render.yaml'
       - '.github/workflows/backend.yml'
+
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -19,17 +22,59 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Deploy to Render
-        uses: johnbeyers/hello-render@main
-        with:
-          service_type: web
-          service_name: crimejournal-api
-          environment: production
+      - name: Deploy to Render via API
+        run: |
+          # Get the Render service ID
+          SERVICE_ID=$(curl -s --retry 3 \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services?name=crimejournal-api&type=web" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d[0]['id'] if d else '')")
+
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Service not found. Please create 'crimejournal-api' web service on Render first."
+            echo "You can use render.yaml Blueprint to auto-create it."
+            exit 1
+          fi
+
+          echo "Found service ID: $SERVICE_ID"
+
+          # Trigger a manual deploy
+          DEPLOY_ID=$(curl -s --retry 3 -X POST \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"clearCache": "nocache"}' \
+            "https://api.render.com/v1/services/${SERVICE_ID}/deploys" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('id',''))")
+
+          if [ -z "$DEPLOY_ID" ]; then
+            echo "Failed to trigger deployment"
+            exit 1
+          fi
+
+          echo "Triggered deploy ID: $DEPLOY_ID"
+
+          # Wait for deploy to complete (poll every 30s, max 15 min)
+          echo "Waiting for deployment to complete..."
+          for i in $(seq 1 30); do
+            sleep 30
+            STATUS=$(curl -s \
+              -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/deploys/${DEPLOY_ID}" \
+              | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status',''))" 2>/dev/null)
+            echo "Deploy status: $STATUS (attempt $i/30)"
+            if [ "$STATUS" = "succeeded" ]; then
+              echo "Deployment succeeded!"
+              exit 0
+            elif [ "$STATUS" = "failed" ]; then
+              echo "Deployment failed!"
+              exit 1
+            fi
+          done
+
+          echo "Deployment timed out after 15 minutes"
+          exit 1
         env:
           RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
-          COURTLISTENER_API_TOKEN: ${{ secrets.COURTLISTENER_API_TOKEN }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
   health-check:
     name: Health Check
@@ -38,6 +83,9 @@ jobs:
     steps:
       - name: Check API Health
         run: |
-          echo "Waiting for deployment..."
-          sleep 30
-          curl -f https://crimejournal-api.onrender.com/health || exit 1
+          echo "Waiting for service to wake up (free tier cold start)..."
+          sleep 45
+          curl -f -s --retry 3 --max-time 30 \
+            "https://crimejournal-api.onrender.com/health" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); print('Health:', d.get('status','unknown'))" \
+            || { echo "Health check failed"; exit 1; }

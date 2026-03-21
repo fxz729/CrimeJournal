@@ -19,8 +19,9 @@ from httpx import AsyncClient, ASGITransport
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # 设置测试环境变量
-os.environ.setdefault("CLAUDE_API_KEY", "test-claude-key")
-os.environ.setdefault("DEEPSEEK_API_KEY", "test-deepseek-key")
+os.environ.setdefault("MINIMAX_API_KEY", "test-minimax-key")
+os.environ.setdefault("MINIMAX_BASE_URL", "https://api.minimax.chat/v1")
+os.environ.setdefault("MINIMAX_MODEL", "MiniMax-Text-02")
 os.environ.setdefault("COURTLISTENER_API_TOKEN", "test-courtlistener-token")
 os.environ.setdefault("JWT_SECRET_KEY", "test-secret-key-for-testing-only")
 os.environ.setdefault("JWT_ALGORITHM", "HS256")

@@ -5,6 +5,9 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Search from './pages/Search'
 import CaseDetail from './pages/CaseDetail'
+import Favorites from './pages/Favorites'
+import Account from './pages/Account'
+import Upgrade from './pages/Upgrade'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -30,11 +33,18 @@ function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
-      <Route path="/search" element={
+      <Route path="/search" element={<Search />} />
+      <Route path="/favorites" element={
         <ProtectedRoute>
-          <Search />
+          <Favorites />
         </ProtectedRoute>
       } />
+      <Route path="/account" element={
+        <ProtectedRoute>
+          <Account />
+        </ProtectedRoute>
+      } />
+      <Route path="/upgrade" element={<Upgrade />} />
       <Route path="/cases/:id" element={
         <ProtectedRoute>
           <CaseDetail />

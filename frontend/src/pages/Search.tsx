@@ -5,6 +5,7 @@ import { Search as SearchIcon, Filter, Loader2, FileText, Calendar, MapPin } fro
 import { casesApi } from '../lib/api'
 import { useI18n } from '../lib/i18n'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import { useAuth } from '../lib/auth'
 
 interface CaseResult {
   id: number
@@ -19,18 +20,34 @@ interface CaseResult {
 export default function Search() {
   const [query, setQuery] = useState('')
   const [court, setCourt] = useState('')
+  const [dateMin, setDateMin] = useState('')
+  const [dateMax, setDateMax] = useState('')
   const navigate = useNavigate()
   const { t } = useI18n()
+  const { user } = useAuth()
+
+  const filters: Record<string, string> = {}
+  if (court) filters.court = court
+  if (dateMin) filters.date_min = dateMin
+  if (dateMax) filters.date_max = dateMax
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['search', query, court],
-    queryFn: () => casesApi.search(query, 1, court ? { court } : {}),
+    queryKey: ['search', query, court, dateMin, dateMax],
+    queryFn: () => casesApi.search(query, 1, filters),
     enabled: query.length > 2,
   })
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
   }
+
+  const clearFilters = () => {
+    setCourt('')
+    setDateMin('')
+    setDateMax('')
+  }
+
+  const hasFilters = court || dateMin || dateMax
 
   const results = data?.data?.results || []
 
@@ -45,9 +62,18 @@ export default function Search() {
           </div>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
-            <button className="text-gray-600 hover:text-gray-900">{t('nav.search')}</button>
-            <button className="text-gray-600 hover:text-gray-900">{t('nav.favorites')}</button>
-            <button className="text-gray-600 hover:text-gray-900">{t('nav.account')}</button>
+            <button
+              onClick={() => navigate(user ? '/favorites' : '/login')}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              {t('nav.favorites')}
+            </button>
+            <button
+              onClick={() => navigate(user ? '/account' : '/login')}
+              className="text-gray-600 hover:text-gray-900"
+            >
+              {t('nav.account')}
+            </button>
           </div>
         </div>
       </header>
@@ -76,7 +102,7 @@ export default function Search() {
           </form>
 
           {/* Filters */}
-          <div className="mt-4 flex gap-4 items-center">
+          <div className="mt-4 flex flex-wrap gap-4 items-center">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Filter className="h-4 w-4" />
               <span>{t('search.filters')}</span>
@@ -90,7 +116,45 @@ export default function Search() {
               <option value="ca9">9th Circuit</option>
               <option value="ca2">2nd Circuit</option>
               <option value="ca5">5th Circuit</option>
+              <option value="ca1">1st Circuit</option>
+              <option value="ca3">3rd Circuit</option>
+              <option value="ca4">4th Circuit</option>
+              <option value="ca6">6th Circuit</option>
+              <option value="ca7">7th Circuit</option>
+              <option value="ca8">8th Circuit</option>
+              <option value="ca10">10th Circuit</option>
+              <option value="ca11">11th Circuit</option>
+              <option value="cadc">DC Circuit</option>
+              <option value="cafc">Federal Circuit</option>
             </select>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-500">{t('search.dateFrom')}:</span>
+              <input
+                type="date"
+                value={dateMin}
+                onChange={(e) => setDateMin(e.target.value)}
+                className="px-3 py-1 border rounded-md text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-gray-400" />
+              <span className="text-sm text-gray-500">{t('search.dateTo')}:</span>
+              <input
+                type="date"
+                value={dateMax}
+                onChange={(e) => setDateMax(e.target.value)}
+                className="px-3 py-1 border rounded-md text-sm"
+              />
+            </div>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="text-sm text-primary-600 hover:underline"
+              >
+                {t('search.clearFilters')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -103,8 +167,14 @@ export default function Search() {
           )}
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg">
-              {t('common.error')}. {t('common.retry')}
+            <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2">
+              <span>{t('common.error')}</span>
+              <button
+                onClick={() => window.location.reload()}
+                className="ml-auto text-sm underline hover:no-underline"
+              >
+                {t('common.retry')}
+              </button>
             </div>
           )}
 
@@ -130,11 +200,11 @@ export default function Search() {
                   <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
-                      {result.court || 'Unknown Court'}
+                      {result.court || t('common.noData')}
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4" />
-                      {result.date_filed ? new Date(result.date_filed).toLocaleDateString() : 'Unknown Date'}
+                      {result.date_filed ? new Date(result.date_filed).toLocaleDateString() : t('common.noData')}
                     </div>
                     {result.citation && (
                       <div className="flex items-center gap-1">
@@ -145,7 +215,7 @@ export default function Search() {
                   </div>
                 </div>
                 <button className="text-gray-400 hover:text-primary-600">
-                  View Details &rarr;
+                  {t('case.viewDetails')} &rarr;
                 </button>
               </div>
             </div>
@@ -157,10 +227,10 @@ export default function Search() {
           <div className="bg-white rounded-xl p-12 text-center">
             <h3 className="text-lg font-semibold mb-4">{t('search.title')}</h3>
             <p className="text-gray-600 mb-4">
-              Enter at least 3 characters to search millions of legal cases
+              {t('search.enterChars')}
             </p>
             <div className="text-sm text-gray-500">
-              <p>Try searching for:</p>
+              <p>{t('search.trySearching')}</p>
               <div className="flex gap-2 justify-center mt-2 flex-wrap">
                 {['contract breach', 'negligence', 'patent', 'trademark', 'employment'].map((term) => (
                   <button

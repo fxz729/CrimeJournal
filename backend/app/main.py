@@ -2,12 +2,16 @@
 CrimeJournal Backend Application
 AI-Powered Legal Case Research Platform
 """
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.api import api_router
+from app.middleware.usage import UsageLimitMiddleware
+
+logger = logging.getLogger(__name__)
 
 
 # ==================== Lifespan Events ====================
@@ -50,6 +54,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 用量限制中间件（记录搜索次数）
+app.add_middleware(UsageLimitMiddleware)
+
 
 # ==================== Register API Routes ====================
 
@@ -73,12 +80,6 @@ async def root():
 async def health():
     """Health check endpoint."""
     return {"status": "healthy"}
-
-
-# ==================== Import Logger ====================
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 if __name__ == "__main__":

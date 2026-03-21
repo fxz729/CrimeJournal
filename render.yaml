@@ -1,9 +1,11 @@
-# Render Backend Deployment Configuration
-# https://render.com/docs/deploy?create&lang=python
-
-# Free tier configuration
-# Note: Free tier has sleep after 15 min of inactivity
-# For production, consider paid tiers
+# CrimeJournal Backend Deployment Configuration
+# Render - Free Tier
+#
+# Deploy: Push to GitHub with Render Blueprints enabled, or connect manually
+# Note: Free tier sleeps after 15 minutes of inactivity
+#       Cold start takes ~30 seconds on first request
+#
+# Docs: https://render.com/docs/deploy?create&lang=python
 
 services:
   - type: web
@@ -12,44 +14,57 @@ services:
     region: oregon
     plan: free
 
-    # Build command
+    # Python runtime version
+    pythonVersion: "3.11"
+
+    # Build: install dependencies from backend/requirements.txt
     buildCommand: |
-      cd backend
-      pip install -r requirements.txt
+      cd backend && pip install -r requirements.txt
 
-    # Start command
+    # Start: uvicorn serves the FastAPI app
     startCommand: |
-      cd backend
-      uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT
 
-    # Health check
+    # Health check endpoint (GET /health)
     healthCheckPath: /health
 
     # Environment variables
     envVars:
+      # Python
+      - key: PYTHON_VERSION
+        value: "3.11"
+
       # Application
       - key: APP_NAME
         value: CrimeJournal
       - key: APP_VERSION
         value: "1.0.0"
+      - key: APP_ENV
+        value: production
       - key: DEBUG
         value: "false"
 
-      # DeepSeek API (set via Render dashboard for production)
-      - key: DEEPSEEK_API_KEY
+      # MiniMax AI API (set via Render dashboard - do NOT commit real keys)
+      # Get your key at: https://platform.minimax.chat/
+      - key: MINIMAX_API_KEY
         sync: false
-      - key: DEEPSEEK_BASE_URL
-        value: https://api.deepseek.com/v1
+      - key: MINIMAX_BASE_URL
+        value: https://api.minimax.chat/v1
+      - key: MINIMAX_MODEL
+        value: MiniMax-Text-02
 
-      # CourtListener API (set via Render dashboard)
+      # CourtListener API (free legal data)
+      # Get your token at: https://www.courtlistener.com/api/token/
       - key: COURTLISTENER_API_TOKEN
         sync: false
 
-      # Database - PostgreSQL (create via Render dashboard)
+      # Database
+      # Development: SQLite (default - file stored in container)
+      # Production: Set DATABASE_URL via Render dashboard to your Supabase/postgres URL
       - key: DATABASE_URL
-        sync: false
+        value: sqlite:///./crimejournal.db
 
-      # JWT
+      # JWT Authentication
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: JWT_ALGORITHM
@@ -57,13 +72,15 @@ services:
       - key: JWT_EXPIRATION_HOURS
         value: "24"
 
-      # Embedding Model
+      # Local Embedding Model (free, no API needed)
       - key: EMBEDDING_MODEL
         value: all-MiniLM-L6-v2
 
-  # Redis Cache Service
-  - type: redis
-    name: crimejournal-redis
-    plan: free
-    region: oregon
-    ipAllowList: []
+      # Redis Cache (optional - for production use paid tier or Upstash)
+      # Free tier: Redis is not available, set empty to disable caching
+      - key: REDIS_URL
+        value: ""
+
+      # Logging
+      - key: LOG_LEVEL
+        value: INFO
