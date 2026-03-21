@@ -16,7 +16,10 @@ api_router = APIRouter()
 # 注册子路由
 api_router.include_router(cases_router, prefix="/cases", tags=["cases"])
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
-api_router.include_router(search_router, tags=["search"])
+api_router.include_router(search_router, prefix="/search", tags=["search"])
+
+# 注意：搜索历史和收藏使用 /search/history, /search/favorites
+# 与前端 api.ts 中的 casesApi.search 和 historyApi 对应
 
 __all__ = [
     "api_router",

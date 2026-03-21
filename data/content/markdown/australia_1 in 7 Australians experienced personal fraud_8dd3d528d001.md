@@ -1,0 +1,107 @@
+# 1 in 7 Australians experienced personal fraud
+
+**Source**: https://www.abs.gov.au/media-centre/media-releases/1-7-australians-experienced-personal-fraud
+**Date**: 20260312T023000Z
+**Language**: English
+**Country**: Australia
+**Domain**: abs.gov.au
+
+---
+
+1 in 7 Australians experienced personal fraud
+
+Media Release
+
+APA
+
+Copy
+
+Detail
+
+Cite
+
+Citation
+
+Close
+
+Print
+
+Released
+
+12/03/2026
+
+Source
+
+Personal fraud, 2024-25 financial year
+
+Release date and time
+
+12/03/2026 11:30am AEDT
+
+An estimated 3.2 million Australians, or around one in seven people, experienced personal fraud in 2024-25, according to figures released today by the Australian Bureau of Statistics (ABS).
+
+William Milne, ABS head of Crime Statistics, said: ‘The number of Australians experiencing card fraud has doubled over the past decade, increasing from 1.1 million in 2014-15 to 2.3 million in 2024-25.
+
+'Card fraud was experienced by around one in ten Australians in 2024-25.
+
+‘Total losses from card fraud in the last 12-months were estimated at $2.2 billion nationally.’
+
+Almost three quarters (72 per cent) of Australians who experienced card fraud were fully reimbursed by their bank or card issuer.
+
+After reimbursements by banks and financial institutions, total losses to individuals were reduced to an estimated $350 million.
+
+The survey also found that around 600,000 people experienced a scam in the last year.
+
+The scam victimisation rate fell from 3.1 per cent in 2023-24 to 2.7 per cent in 2024-25, meaning around 80,000 fewer people experienced a scam.
+
+This fall was driven by a drop in information request or phishing scams, with nearly 42,000 fewer victims in 2024-25.
+
+‘Buying or selling scams continued to be the most common scam type in Australia and was experienced by around 300,000 people,’ Mr Milne said.
+
+The Personal Fraud Survey collects information on experiences of card fraud, selected scam types, identity theft and online impersonation. The survey includes prevalence rates, socio‑demographic characteristics of people who experienced fraud, and details about their experiences.
+
+More information about the 2024–25 survey results can be found in
+
+Personal fraud
+
+.
+
+Media notes
+
+Personal fraud includes card fraud, scams, identity theft, and online impersonation.
+
+Card fraud involves the use of credit, debit, or EFTPOS card details to make purchases or withdraw cash without the account owner's permission.
+
+Financial loss data refers to the most recent incident of card fraud in the previous 12 months.
+
+A scam is a fraudulent invitation, request, notification, or offer, designed to obtain personal information or money. Experiencing a scam means responding to a scam by seeking further information, providing money or personal information, or accessing links associated with the scam.
+
+Information request or phishing scams involve receiving a fake notification or request from a bank, business, or other organisation asking for personal details.
+
+Buying or selling scams involve requests for payment of fake invoices or products, or the purchase of non-existent, stolen or counterfeit goods. Includes false billing, classifieds, overpayments, and online shopping scams.
+
+2024-25 refers to the period in which the survey was conducted. The data relates to experiences in the 12 months prior to each person responding to the survey
+
+For any media requests, email
+
+media@abs.gov.au
+
+or call 1300 175 070 (9am–5pm Canberra time) with your questions and deadline.
+
+Please attribute the 'Australian Bureau of Statistics (ABS)' when using our data.
+
+Explore our
+
+Data Crash Course
+
+for guidance on finding and interpreting ABS data, and subscribe to our
+
+release notifications
+
+to stay updated.
+
+Information on how the ABS will release market sensitive releases
+
+during a website or API outage
+
+.
