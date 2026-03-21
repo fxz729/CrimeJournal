@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search as SearchIcon, Filter, Loader2, FileText, Calendar, MapPin } from 'lucide-react'
 import { casesApi } from '../lib/api'
+import { useI18n } from '../lib/i18n'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 interface CaseResult {
   id: number
@@ -18,6 +20,7 @@ export default function Search() {
   const [query, setQuery] = useState('')
   const [court, setCourt] = useState('')
   const navigate = useNavigate()
+  const { t } = useI18n()
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['search', query, court],
@@ -27,9 +30,6 @@ export default function Search() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      // Query will trigger the useQuery
-    }
   }
 
   const results = data?.data?.results || []
@@ -43,11 +43,12 @@ export default function Search() {
             <FileText className="h-6 w-6 text-primary-600" />
             <span className="font-serif text-xl font-bold">CrimeJournal</span>
           </div>
-          <nav className="flex items-center gap-6">
-            <button className="text-gray-600 hover:text-gray-900">History</button>
-            <button className="text-gray-600 hover:text-gray-900">Favorites</button>
-            <button className="text-gray-600 hover:text-gray-900">Account</button>
-          </nav>
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
+            <button className="text-gray-600 hover:text-gray-900">{t('nav.search')}</button>
+            <button className="text-gray-600 hover:text-gray-900">{t('nav.favorites')}</button>
+            <button className="text-gray-600 hover:text-gray-900">{t('nav.account')}</button>
+          </div>
         </div>
       </header>
 
@@ -61,7 +62,7 @@ export default function Search() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search legal cases... (e.g., 'contract breach', 'negligence')"
+                placeholder={t('search.placeholder')}
                 className="w-full pl-12 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg"
               />
             </div>
@@ -70,7 +71,7 @@ export default function Search() {
               className="bg-primary-600 text-white px-6 py-3 rounded-lg hover:bg-primary-700 flex items-center gap-2"
             >
               <SearchIcon className="h-5 w-5" />
-              Search
+              {t('search.btn')}
             </button>
           </form>
 
@@ -78,14 +79,14 @@ export default function Search() {
           <div className="mt-4 flex gap-4 items-center">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Filter className="h-4 w-4" />
-              <span>Filters:</span>
+              <span>{t('search.filters')}</span>
             </div>
             <select
               value={court}
               onChange={(e) => setCourt(e.target.value)}
               className="px-3 py-1 border rounded-md text-sm"
             >
-              <option value="">All Courts</option>
+              <option value="">{t('search.court')}</option>
               <option value="ca9">9th Circuit</option>
               <option value="ca2">2nd Circuit</option>
               <option value="ca5">5th Circuit</option>
@@ -103,15 +104,15 @@ export default function Search() {
 
           {error && (
             <div className="bg-red-50 text-red-600 p-4 rounded-lg">
-              Failed to load results. Please try again.
+              {t('common.error')}. {t('common.retry')}
             </div>
           )}
 
           {!isLoading && query.length > 2 && results.length === 0 && (
             <div className="bg-white rounded-xl p-12 text-center">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No results found</h3>
-              <p className="text-gray-600">Try different keywords or remove filters</p>
+              <h3 className="text-lg font-semibold mb-2">{t('search.noResults')}</h3>
+              <p className="text-gray-600">{t('search.tip')}</p>
             </div>
           )}
 
@@ -144,7 +145,7 @@ export default function Search() {
                   </div>
                 </div>
                 <button className="text-gray-400 hover:text-primary-600">
-                  View Details →
+                  View Details &rarr;
                 </button>
               </div>
             </div>
@@ -154,7 +155,7 @@ export default function Search() {
         {/* Tips when no query */}
         {query.length <= 2 && (
           <div className="bg-white rounded-xl p-12 text-center">
-            <h3 className="text-lg font-semibold mb-4">Search Legal Cases</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('search.title')}</h3>
             <p className="text-gray-600 mb-4">
               Enter at least 3 characters to search millions of legal cases
             </p>

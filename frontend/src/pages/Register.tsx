@@ -3,6 +3,8 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Scale, Mail, Lock, User } from 'lucide-react'
 import { authApi } from '../lib/api'
 import { useAuth } from '../lib/auth'
+import { useI18n } from '../lib/i18n'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 export default function Register() {
   const [email, setEmail] = useState('')
@@ -13,6 +15,7 @@ export default function Register() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { login } = useAuth()
+  const { t } = useI18n()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,19 +36,22 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <div className="max-w-md w-full p-8 bg-white rounded-xl shadow-lg">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2">
             <Scale className="h-8 w-8 text-primary-600" />
             <span className="font-serif text-2xl font-bold">CrimeJournal</span>
           </Link>
-          <h1 className="text-2xl font-semibold mt-6">Create your account</h1>
-          <p className="text-gray-600 mt-2">Start your free trial today</p>
+          <h1 className="text-2xl font-semibold mt-6">{t('auth.register')}</h1>
+          <p className="text-gray-600 mt-2">{t('home.cta.start')}</p>
         </div>
 
         {searchParams.get('plan') === 'pro' && (
           <div className="mb-4 p-3 bg-primary-50 text-primary-700 rounded-lg text-sm">
-            You're signing up for the Pro plan. You can upgrade after registration.
+            You're signing up for the Pro plan.
           </div>
         )}
 
@@ -58,7 +64,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
+              {t('auth.fullName')}
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -75,7 +81,7 @@ export default function Register() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t('auth.email')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -92,7 +98,7 @@ export default function Register() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password
+              {t('auth.password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -113,14 +119,14 @@ export default function Register() {
             disabled={loading}
             className="w-full bg-primary-600 text-white py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
           >
-            {loading ? 'Creating account...' : 'Create Account'}
+            {loading ? t('common.loading') : t('auth.create')}
           </button>
         </form>
 
         <p className="mt-6 text-center text-gray-600">
-          Already have an account?{' '}
+          {t('auth.haveAccount')}{' '}
           <Link to="/login" className="text-primary-600 hover:underline">
-            Sign in
+            {t('auth.signin')}
           </Link>
         </p>
       </div>
