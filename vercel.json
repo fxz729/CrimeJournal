@@ -6,13 +6,8 @@
   "devCommand": "cd frontend && npm run dev",
   "regions": ["hnd1"],
   "env": {
-    "VITE_API_BASE_URL": {
-      "description": "Backend API base URL - set to Render backend URL in production",
-      "value": "https://crimejournal-api.onrender.com"
-    },
-    "VITE_APP_NAME": {
-      "value": "CrimeJournal"
-    }
+    "VITE_API_BASE_URL": "https://crimejournal-api.onrender.com",
+    "VITE_APP_NAME": "CrimeJournal"
   },
   "headers": [
     {

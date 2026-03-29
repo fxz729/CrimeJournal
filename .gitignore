@@ -87,3 +87,5 @@ node_modules/.cache/
 # Backup files
 *.bak
 *.backup
+
+.vercel
