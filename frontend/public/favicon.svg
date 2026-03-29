@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <rect width="100" height="100" rx="20" fill="#3b82f6"/>
+  <g fill="white">
+    <!-- Scales of justice icon -->
+    <path d="M50 15 L50 20 M30 30 Q50 50 70 30 Q50 55 30 30 M20 70 L80 70 M35 85 L35 70 L65 70 L65 85"/>
+    <line x1="50" y1="20" x2="50" y2="55" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <path d="M25 35 Q50 55 75 35 Q50 65 25 35" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <line x1="20" y1="70" x2="80" y2="70" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="35" y1="70" x2="35" y2="85" stroke="white" stroke-width="3" stroke-linecap="round"/>
+    <line x1="65" y1="70" x2="65" y2="85" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  </g>
+</svg>

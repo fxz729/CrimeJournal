@@ -1,10 +1,14 @@
 {
-  "enabledPlugins": {
-    "everything-claude-code@everything-claude-code": true
-  },
   "permissions": {
     "allow": [
-      "mcp__firecrawl__firecrawl_search"
+      "mcp__firecrawl__firecrawl_search",
+      "Read(//c/Users/11075/.claude/rules/advanced/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\11075\\.claude"
     ]
+  },
+  "enabledPlugins": {
+    "everything-claude-code@everything-claude-code": true
   }
 }

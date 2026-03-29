@@ -6,6 +6,7 @@ MiniMax AI服务实现
 """
 import time
 import json
+import re
 from typing import Dict, List, Optional
 import logging
 import httpx
@@ -36,7 +37,7 @@ class MiniMaxService(AIServiceBase):
                 "Authorization": f"Bearer {self.api_key}",
                 "Content-Type": "application/json"
             },
-            timeout=60.0
+            timeout=httpx.Timeout(180.0, connect=10.0)  # 180s for large texts with think mode
         )
         logger.info(f"MiniMax客户端初始化成功，base_url: {self.base_url}")
 
@@ -89,6 +90,9 @@ class MiniMaxService(AIServiceBase):
             data = response.json()
 
             result = data["choices"][0]["message"]["content"]
+            # MiniMax M2.x 模型默认开启 thinking，返回内容含<think>...</think> 标签
+            # 去掉标签只保留最终回答内容
+            result = re.sub(r'<think>.*?</think>', '', result, flags=re.DOTALL).strip()
             duration = time.time() - start_time
             self._log_response(result, duration)
 
@@ -148,15 +152,18 @@ class MiniMaxService(AIServiceBase):
                 prompt=user_prompt,
                 system_prompt=system_prompt,
                 temperature=0.3,
-                max_tokens=1500
+                max_tokens=5000  # increased for M2.x think mode
             )
+            # 去掉 markdown 代码块包装
+            response = re.sub(r'```(?:json)?\s*', '', response.strip())
+            response = re.sub(r'\s*```', '', response)
             entities = json.loads(response)
             logger.info(f"成功提取{sum(len(v) for v in entities.values())}个实体")
             return entities
 
         except json.JSONDecodeError as e:
             logger.error(f"实体提取JSON解析失败: {str(e)}")
-            return {}
+            raise RuntimeError(f"AI返回了无效的JSON格式: {str(e)}")
         except Exception as e:
             logger.error(f"实体提取失败: {str(e)}")
             raise
@@ -196,7 +203,7 @@ class MiniMaxService(AIServiceBase):
                 prompt=user_prompt,
                 system_prompt=system_prompt,
                 temperature=0.5,
-                max_tokens=max_length * 2
+                max_tokens=max_length * 8  # 8x to accommodate think tags + answer
             )
             logger.info(f"成功生成案例总结，长度: {len(summary)}")
             return summary.strip()
@@ -231,15 +238,21 @@ class MiniMaxService(AIServiceBase):
                 prompt=user_prompt,
                 system_prompt=system_prompt,
                 temperature=0.3,
-                max_tokens=500
+                max_tokens=2000
             )
+            # 去掉 markdown 代码块包装
+            response = re.sub(r'```(?:json)?\s*', '', response.strip())
+            response = re.sub(r'\s*```', '', response)
             keywords = json.loads(response)
             logger.info(f"成功提取{len(keywords)}个关键词")
             return keywords[:top_n]
 
+        except json.JSONDecodeError as e:
+            logger.error(f"关键词提取JSON解析失败: {str(e)}")
+            raise RuntimeError(f"AI返回了无效的JSON格式: {str(e)}")
         except Exception as e:
             logger.error(f"关键词提取失败: {str(e)}")
-            return []
+            raise
 
     async def classify(
         self,
@@ -265,7 +278,7 @@ class MiniMaxService(AIServiceBase):
                 prompt=user_prompt,
                 system_prompt=system_prompt,
                 temperature=0.3,
-                max_tokens=100
+                max_tokens=1000  # increased for M2.x think mode
             )
             result = category.strip()
             logger.info(f"案例分类结果: {result}")
@@ -273,16 +286,118 @@ class MiniMaxService(AIServiceBase):
 
         except Exception as e:
             logger.error(f"案例分类失败: {str(e)}")
-            return categories[0] if categories else ""
+            raise
+
+    async def format_text(
+        self,
+        text: str,
+    ) -> str:
+        """
+        使用MiniMax整理优化法律案例文本
+
+        保持原文结构，只做格式整理：修正换行、清理乱码、统一标点、
+        标注段落、识别章节结构等。不改写内容，只优化可读性。
+
+        Args:
+            text: 待整理的原始文本
+
+        Returns:
+            整理优化后的文本
+        """
+        system_prompt = self._build_system_prompt(
+            task="整理优化法律案例文本的格式与可读性",
+            context="请仅整理格式，不要改写内容或添加解释"
+        )
+
+        user_prompt = f"""请对以下法律案例文本进行格式整理与优化。要求：
+
+1. 保持原文所有内容不变，不删改任何文字
+2. 统一换行符，每段之间空一行
+3. 清除原文中明显的乱码、无效字符、异常空格
+4. 统一标点符号格式（全角/半角保持原样，标点后统一加一个空格）
+5. 如果原文有明显的大写标题或章节标记（如 "I.", "II.", "A.", "B." 或全大写短语），保留并适当强调
+6. 如果段落过长（超过500字），在自然语义处拆分
+7. 在文件开头保留原始案号、当事人、法院等基本信息行（如果存在）
+8. 开头加一行分隔线：{'='*60}
+
+只返回整理后的文本，不要添加任何说明。
+
+原始文本：
+{text}
+
+整理后的文本："""
+
+        try:
+            formatted = await self.generate(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=0.2,  # 低温度保证格式一致性
+                max_tokens=8000,
+            )
+            logger.info(f"成功整理文本，长度: {len(formatted)}（原始: {len(text)}）")
+            return formatted.strip()
+
+        except Exception as e:
+            logger.error(f"文本整理失败: {str(e)}")
+            raise
 
     async def health_check(self) -> bool:
         """健康检查"""
         try:
             response = await self.generate(
-                prompt="Hello",
-                max_tokens=10
+                prompt="Respond with OK",
+                max_tokens=50
             )
             return len(response) > 0
         except Exception as e:
             logger.error(f"MiniMax健康检查失败: {str(e)}")
             return False
+
+    async def translate(
+        self,
+        text: str,
+        target_language: str = "English",
+        source_language: str = "auto",
+    ) -> str:
+        """
+        使用MiniMax翻译文本
+
+        Args:
+            text: 待翻译文本
+            target_language: 目标语言
+            source_language: 源语言，auto表示自动检测
+
+        Returns:
+            翻译后的文本
+        """
+        system_prompt = self._build_system_prompt(
+            task="翻译法律文本",
+            context="请准确翻译法律案例文本，保持专业术语和含义"
+        )
+
+        source_hint = f"源语言: {source_language}，" if source_language != "auto" else ""
+
+        user_prompt = f"""请将以下法律案例文本翻译成{source_hint}目标语言: {target_language}。
+
+要求：
+1. 保持原文的专业法律术语
+2. 保持判决要点和关键信息的准确性
+3. 只返回翻译结果，不要添加任何说明
+
+案例文本：
+{text}
+
+翻译结果："""
+
+        try:
+            translated = await self.generate(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                temperature=0.3,
+                max_tokens=16000,  # increased for M2.x think mode
+            )
+            logger.info(f"成功翻译文本至 {target_language}，长度: {len(translated)}")
+            return translated.strip()
+        except Exception as e:
+            logger.error(f"翻译失败: {str(e)}")
+            raise

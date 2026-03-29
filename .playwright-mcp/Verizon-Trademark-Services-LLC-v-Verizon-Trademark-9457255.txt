@@ -1,0 +1,688 @@
+Case: Verizon Trademark Services LLC v. Verizon Trademark Services LLC
+Court: dcd
+Date Filed: 2024/1/4
+Citation: N/A
+Docket: Civil Action No. 2023-2750
+
+=== AI SUMMARY ===
+N/A
+
+=== CASE TEXT ===
+                                 UNITED STATES DISTRICT COURT
+                                 FOR THE DISTRICT OF COLUMBIA
+
+
+    VERIZON TRADEMARK SERVICES LLC
+
+                             Plaintiff,                          Case No. 23-CV-2750 (JMC)
+
+          v.
+
+    VERIZON TRADEMARK SERVICES LLC, et
+    al.,
+
+                             Defendants.
+
+                                          MEMORANDUM OPINION
+
+         Plaintiff Verizon Trademark Services LLC (Verizon) moves for default judgment on its
+
+cybersquatting and trademark infringement claims against Defendant Verizon Trademark Services
+
+LLC (VTS LLC). ECF 9. Verizon’s motion remains unopposed given VTS LLC’s absence from
+
+this case. Upon consideration of the motion, and for the reasons set out below, the Court GRANTS
+
+IN PART and DENIES IN PART Verizon’s Motion for Default Judgment. Specifically, the Court
+
+has modified Verizon’s requested injunction to ensure that third parties, who are neither subject to
+
+this Court’s jurisdiction nor alleged to have acted in concert with Defendants, do not have
+
+obligations under the Court’s order. 1
+
+I.       BACKGROUND
+
+         Plaintiff owns the trademark and trade name VERIZON and licenses the use of the mark
+
+to its parent company and other Verizon companies and affiliates. ECF 1 ¶ 23. Per the Complaint,
+
+VTS LLC—under the exclusive control of its “sole organizer and contact,” Co-Defendant Matt
+
+
+1
+  Unless otherwise indicated, the formatting of citations has been modified throughout this opinion, for example, by
+omitting internal quotation marks, emphases, citations, and alterations and by altering capitalization. All pincites to
+documents filed on the docket in this case are to the automatically generated ECF Page ID number that appears at
+the top of each page.
+
+                                                           1
+McMan—registered multiple infringing domain names and trade names as part of a scheme to
+
+mislead consumers, damage the VERIZON mark, and extort Verizon. Id. ¶¶ 10, 67–68, 96–100.
+
+As early as April 2023, the various named Defendants (including VTS LLC), through McMan,
+
+began registering domains that derived from or incorporated trademarks owned by Verizon, which
+
+prompted Verizon to send cease-and-desist letters objecting to the unauthorized use of its
+
+trademarks. Id. ¶¶ 41, 44, 72. In response, Defendants doubled down, registering additional domain
+
+names (as well as trade names) incorporating the entirety of the VERIZON mark or other marks
+
+owned by Plaintiff. Id. ¶¶ 45, 73–74, 77, 83–84. When registering the domains at issue, Defendants
+
+often did so anonymously, using “a popular domain privacy service” known as “Domains By
+
+Proxy.” Id. ¶¶ 42, 103.
+
+        At the height of this misconduct, VTS LLC drafted a “Complaint” alleging that Plaintiff
+
+was misleading consumers. Id. ¶ 94. This same document also boasted that Plaintiff “Can’t Even
+
+Get a DBA in Washington, DC for ‘Verizon Trademark Services’ LLC because . . . Verizon
+
+Trademark Services LLC Owned By Matt McMan Will NOT Grant ‘Verizon’ written Consent.”
+
+ECF 1-10 at 4. On multiple occasions, Defendant sent versions of this “Complaint” to Plaintiff and
+
+government officials in a coercive attempt to sell or license these marks to Verizon. See ECF 1
+
+¶¶ 88, 94, 100; ECF 1-11; ECF 1-12; ECF 1-13. When Verizon resisted those efforts, Defendants
+
+promptly registered even more domains incorporating the VERIZON mark. ECF 1 ¶ 103. As of
+
+today, several of Defendants’ domains “do[] not, and ha[ve] never, resolved to an active website”
+
+or are “parked webpage[s]” with sponsored links for services, while other domains resolve to
+
+websites containing “false information accusing Verizon of engaging in ‘shell company fraud.’”
+
+See, e.g., id. ¶¶ 71, 79, 81, 95, 105.
+
+
+
+
+                                                2
+       Plaintiff filed suit on September 20, 2023. ECF 1. The docket reflects that Plaintiff properly
+
+served VTS LLC’s registered agent on September 26, 2023. ECF 5. Defendant was required to file
+
+its response by October 17, 2023 but did not do so. To date, neither VTS LLC nor any other named
+
+Defendant has entered an appearance. On November 1, 2023, Verizon filed a request for entry of
+
+default, and the Clerk of the Court entered default the following day. ECF 6; ECF 7. Verizon now
+
+voluntarily dismisses four of its seven claims against VTS LLC and seeks a default judgment
+
+pursuant to Federal Rule of Civil Procedure 55(b)(2) against VTS LLC on the following three
+
+causes of action: cybersquatting under the Anticybersquatting Consumer Protection Act (ACPA),
+
+15 U.S.C. § 1125(d); trademark infringement under the Lanham Act, 15 U.S.C. § 1114(1); and
+
+trademark infringement and false designation of origin under the Lanham Act, 15 U.S.C.
+
+§ 1125(a)(1)(A). ECF 9 at 6; ECF 1 ¶¶ 112–23, 132–43. For the Lanham Act violations, Plaintiff
+
+seeks injunctive relief against VTS LLC prohibiting it from using the VERIZON Mark in any
+
+form. ECF 9 at 13–14. For the ACPA violations, Plaintiff requests further injunctive relief and
+
+$450,000 in statutory damages, i.e., $50,000 per domain name for 9 infringing domains:
+
+   (1) VERIZONTRADEMARK.COM;                         (6) VERIZONINVESTIGATION.COM;
+
+   (2) VERIZONSHELLCOMPANY.COM;                      (7) VERIZON.COM.CO;
+
+   (3) VERIZONSHELLCOMPANIES.COM;                    (8) VERIZONTRADEMARKSERVICESLLC.COM;
+
+   (4) VERIZONIP.COM;                                    and
+
+   (5) VERIZONSETTLEMENTS.COM;                       (9) VERIZONTRADEMARKS.COM.
+
+       ECF 9 at 9–10, 12–13.
+
+       The Court heard oral argument from Verizon’s counsel on December 12, 2023 as to the
+
+remedies Verizon is seeking, and Plaintiff provided supplemental authority in support of its motion
+
+on December 13, 2023, ECF 14. The Court is now prepared to rule on the motion.
+
+
+
+                                                 3
+II.      DISCUSSION
+
+         Upon default, the “defaulting defendant is deemed to admit every well-pleaded allegation
+
+in the complaint.” Int’l Painters & Allied Trades Indus. Pension Fund v. R.W. Amrine Drywall
+
+Co., 239 F. Supp. 2d 26, 30 (D.D.C. 2002). In general, “[in] the absence of any request to set aside
+
+the default or suggestion by the defendant that it has a meritorious defense, it is clear that the
+
+standard for default judgment has been satisfied.” Int’l Painters & Allied Trades Indus. Pension
+
+Fund v. Auxier Drywall, LLC, 531 F. Supp. 2d 56, 57 (D.D.C. 2008). Nonetheless, “[t]he
+
+determination of whether a default judgment is appropriate is committed to the discretion of the
+
+trial court,” Hanley-Wood LLC v. Hanley Wood LLC, 783 F. Supp. 2d 147, 150 (D.D.C. 2011),
+
+and the Court must “make an independent determination of the sum to be awarded unless the
+
+amount of damages is certain.” Amrine Drywall Co., 239 F. Supp. 2d at 30.
+
+         Here, the Court finds that Plaintiff’s complaint alleges sufficient facts to establish liability
+
+on the cybersquatting and trademark infringement claims for which it seeks default judgment, that
+
+Plaintiff’s request for statutory damages in the amount of $50,000 per unlawful domain is
+
+reasonable, and that a permanent injunction is appropriate. However, the Court will modify or
+
+remove certain terms of Verizon’s proposed injunction to avoid enjoining third parties who are
+
+neither subject to this Court’s jurisdiction nor alleged to be “in active concert or participation”
+
+with Defendants. Fed. R. Civ. Pro. 65(d)(2)(C).
+
+      A. Liability
+
+         As an essential preliminary matter, the Court finds that it has both subject matter
+
+jurisdiction and personal jurisdiction over the defaulting Defendant. Because Plaintiff’s claims
+
+arise under federal trademark law, this Court has subject matter jurisdiction over this action under
+
+28 U.S.C. § 1331 and 28 U.S.C. § 1338(a). And because VTS LLC is a District of Columbia
+
+
+
+                                                    4
+limited liability company, ECF 1 ¶ 7, this Court has personal jurisdiction over Defendant as well.
+
+See Daimler AG v. Bauman, 571 U.S. 117, 137 (2014). The Court now turns to the merits.
+
+        To prevail on its ACPA claim, “Plaintiff must demonstrate that: (1) its trademark is a
+
+distinctive or famous mark entitled to protection; (2) Defendants’ domain name is identical or
+
+confusingly similar to the Plaintiff’s mark; and (3) Defendants ‘register, traffic in, or use’ a domain
+
+name with the bad faith intent to profit from it.” Hanley-Wood LLC, 783 F. Supp. 2d at 152
+
+(quoting 15 U.S.C. § 1125(d)(1)(A)). On the first two elements, Plaintiff has pled facts establishing
+
+that it owns the federally registered VERIZON mark, that the mark is entitled to protection, and
+
+that VTS LLC’s domain names are confusingly similar. See, e.g., ECF 1 ¶¶ 11, 23–27, 29–32,
+
+113–15. As to the final element, Plaintiff has alleged that VTS LLC has no rights in the VERIZON
+
+mark, that VTS LLC’s domains incorporate the mark in its entirety, that the infringing domains
+
+are not used in connection with any legitimate or bona fide business operations, and that VTS LLC
+
+continued to register additional infringing domains despite having no right to do so and despite
+
+knowing of Plaintiff’s objections. See, e.g., ECF 1 ¶¶ 70–71, 79–84, 100, 117–19. These
+
+allegations are sufficient to establish that Defendant registered, trafficked in, or used the infringing
+
+domain names with a bad faith intent to profit. See 15 U.S.C. § 1125(d)(1)(B)(i) (listing factors
+
+relevant to finding of bad faith). Plaintiff has therefore succeeded by default on the merits of its
+
+ACPA claim as to all nine domain names.
+
+        To prevail on its trademark infringement and false designation of origin claims, Plaintiff
+
+must establish “that [it] owns a valid trademark, that [the mark] is distinctive or has acquired a
+
+secondary meaning, and that there is a likelihood of confusion.” Potter v. Toei Animation Inc.,
+
+839 F. Supp. 2d 49, 53 (D.D.C. 2012), aff’d, No. 12-5084, 2012 WL 3055990 (D.C. Cir. July 18,
+
+2012). Verizon brings claims under both 15 U.S.C. § 1114(1) and 15 U.S.C. § 1125(a), and both
+
+
+
+                                                   5
+“are measured by the same standards under the Lanham Act, although the former section requires
+
+registration of the mark at issue, while the latter does not.” Breaking the Chain Found., Inc. v.
+
+Capitol Educ. Support, Inc., 589 F. Supp. 2d 25, 29 (D.D.C. 2008). As described already, Plaintiff
+
+has alleged facts establishing that it is the owner and registrant of the VERIZON mark, that the
+
+mark is distinctive and has acquired secondary meaning, and that the Defendant’s use of the mark
+
+is likely to cause confusion. See, e.g., ECF 1 ¶¶ 11, 23–27, 29–32, 113–15. Verizon is thus entitled
+
+to a default judgment on its Lanham Act claims for trademark infringement and false designation
+
+of origin.
+
+    B. Statutory Damages
+
+        Plaintiff has elected to seek statutory damages rather than actual damages, and this Court
+
+is authorized to award statutory damages from $1,000 to $100,000 for each unlawful domain name.
+
+15 U.S.C. § 1117(d). “Courts have substantial discretion in awarding statutory damages,” Hanley-
+
+Wood LLC, 783 F. Supp. 2d at 153, though in the default context courts are often “hesitant to apply
+
+the maximum penalty,” see, e.g., Verizon Calif. Inc. v. OnlineNIC Inc., No. C 08-2832, 2008 WL
+
+5352022, at *2 (N.D. Cal. Dec. 19, 2008). In fixing an appropriate award, courts consider factors
+
+including, but not limited to: the egregiousness or willfulness of the cybersquatting, the probable
+
+degree of consumer deception and harm, and the number of infringing domains registered in
+
+violation of the Plaintiff’s (or others’) intellectual property rights. See, e.g., Verizon Calif. Inc. v.
+
+Onlinenic, Inc., No. C 08-2832, 2009 WL 2706393, at *3 (N.D. Cal. Aug. 25, 2009); Bittorrent,
+
+Inc. v. Bittorrent Marketing GMBH, No. 12-cv-2525, 2014 WL 5773197, at *11–12 (N.D. Cal.
+
+Nov. 5, 2014). After reviewing the relevant factors, the Court finds that Verizon’s request for
+
+$50,000 per domain is reasonable.
+
+
+
+
+                                                   6
+       The Court acknowledges that some considerations work in VTS LLC’s favor. As to the
+
+number of infringing domains, for example, Verizon seeks compensation for nine domains. In a
+
+world where cybersquatters may crank out infringing domains by the dozens or even hundreds,
+
+however, this factor is not as strong as Plaintiff suggests. See Verizon Cal. Inc, 2008 WL 5352022,
+
+at *2 (awarding $50,000 per domain for 663 unlawful domains). And in terms of the actual content
+
+associated with these domains, Defendant’s websites bear virtually no resemblance to Plaintiff’s.
+
+Compare, e.g., ECF 1 ¶ 79 (“VERIZONTRADEMARK.COM . . . redirects to a website featuring
+
+an incomplete Shopify online store.”), with Home Page, VERIZON (2023), www.verizon.com
+
+(displaying complete, interactive website with polished offers for electronics, internet, and cell
+
+phone services). As such, relative to more sophisticated cybersquatting schemes, the Court finds
+
+it less likely that consumers would actually lose money thinking that these poorly made websites
+
+were a legitimate product of Verizon. Cf. Facebook, Inc. v. Banana Ads LLC, No. CV 11-3619,
+
+2013 WL 1873289, at *16 (N.D. Cal. Apr. 30, 2013) (doubling damages where “landing websites
+
+were designed to deceive users into believing that they were on Facebook’s official website”).
+
+       That said, the Court finds that VTS LLC’s blatant, unabashed, and repeated attempts to
+
+harm Verizon through cybersquatting justifies Verizon’s request for $50,000 per domain. Point
+
+blank, Defendant’s conduct “smacks of bad faith.” Curtis v. Shinsachi Pharm. Inc., 45 F. Supp. 3d
+
+1190, 1203 (C.D. Cal. 2014). When Defendant received notice that Verizon objected to its conduct,
+
+Defendant responded by registering even more infringing domains. When crafting its unlawful
+
+domains, Defendant did not engage in mere “typosquatting,” but instead incorporated the entire,
+
+“identical spelling” of the VERIZON mark. See Bittorrent, 2014 WL 5773197, at *4 n.6, *12.
+
+When registering these domains, Defendant often did so anonymously, likely “to avoid detection.”
+
+See Verizon Cal. Inc., 2008 WL 5352022, at *2. Once Defendant had claimed these domains, it
+
+
+
+                                                7
+used them to publish disparaging statements directed at Verizon. See eAdGear, Inc. v. Liu, No.
+
+CV-11-05398, 2012 WL 2367805, at *2 (N.D. Cal. June 21, 2012). And perhaps most egregiously,
+
+when interacting with Plaintiff, Defendant threatened frivolous legal action and attempted to sell
+
+Plaintiff’s intellectual property back to itself, see CrossFit, Inc. v. Jenkins, 69 F. Supp. 3d 1088,
+
+1102–03 (D. Colo. 2014), all the while decrying Plaintiff as a purportedly fraudulent “shell
+
+company” and falsely claiming that Plaintiff had no right to use its own trademarks, see Curtis,
+
+45 F. Supp. 3d at 1203.
+
+       On balance, even in the context of default, where the Court and the Parties are deprived of
+
+the truth-seeking benefits of an adversarial proceeding, statutory damages in the amount of
+
+$50,000 per domain is reasonable in this case. Verizon shall therefore be awarded a total of
+
+$450,000 in damages. The Court turns next to Plaintiff’s request for injunctive relief.
+
+   C. Injunctive Relief
+
+       Plaintiff seeks a variety of equitable relief under the Lanham Act to prevent future
+
+infringement and effectuate prompt transfer of the infringing domains to Verizon. “In determining
+
+whether to enter a permanent injunction, the Court considers a modified iteration of the factors it
+
+utilizes in assessing preliminary injunctions: (1) success on the merits, (2) whether the plaintiff[]
+
+will suffer irreparable injury absent an injunction, (3) whether, balancing the hardships, there is
+
+harm to defendants or other interested parties, and (4) whether the public interest favors granting
+
+the injunction.” ACLU v. Mineta, 319 F. Supp. 2d 69, 87 (D.D.C. 2004). Here, Plaintiff has
+
+succeeded on the merits by default, and trademark infringement generally, “by its very nature,
+
+carries a presumption of harm.” Hanley-Wood LLC, 783 F. Supp. 2d at 151. The Court also finds
+
+that an injunction would not harm others and that the public interest is best served by protecting
+
+
+
+
+                                                 8
+against further trademark violations. Plaintiff is therefore entitled to a permanent injunction as
+
+requested in its motion, but the Court now must determine what that injunction should look like.
+
+       Under the Lanham Act, this Court may issue an injunction “upon such terms as the court
+
+may deem reasonable.” 15 U.S.C. § 1116(a). Plaintiff requests this Court to enjoin VTS LLC from:
+
+       1. Using and/or registering on or for any websites or any products or services, in
+          any style or form, and in any manner, the trademark VERIZON and any
+          trademarks, product and service names, domain names, corporate names,
+          business names, trade names, logos, favicons, e-mail addresses, website titles,
+          website addresses and URLs, social media names, screen names, metatags,
+          keywords, or any other marks, names, or identifiers that contain Plaintiff’s
+          VERIZON name or mark including, without limitation, (a) the Infringing
+          Domain Names, (b) the infringing trade names “Verizon Trademark Services
+          LLC,” “Verizon Trademark Services,” or “Verizon,” [] and (c) any phonetically
+          equivalent terms and typos of such terms (collectively, the “Prohibited
+          Names”);
+       2. Using and/or registering with any state or local agency any corporate name,
+          business name, or trade name that contains in whole or in part Plaintiff’s
+          VERIZON name or mark including, without limitation, the Prohibited Names;
+       3. Using, registering, selling, acquiring, transferring, releasing, deleting, and/or
+          assigning any of the Infringing Domain Names and any other domain names
+          that contain Plaintiff’s VERIZON name or mark;
+       4. Representing or suggesting by any means whatsoever, directly or indirectly,
+          that Defendant, any product or service offered, promoted, or rendered by
+          Defendant, any website owned, operated, or controlled by Defendant, or any
+          activities undertaken by Defendant, come from Plaintiff, are affiliated with
+          Plaintiff in any way, or are otherwise endorsed or sponsored by Plaintiff; and
+       5. Assisting, aiding, or abetting any other person or business entity in engaging in,
+          performing, or rendering any activities or services prohibited by any of
+          Paragraphs 1–4 above.
+
+       ECF 9-1 at 2–3.
+
+       Plaintiff further requests that this Court order Defendant to cancel all registrations and
+
+filings using any of the infringing names for any corporate, trade, or “other business names.” Id.
+
+
+
+
+                                                9
+at 3. Given Defendant’s egregious and willful trademark infringement, the Court does not hesitate
+
+to find that the terms of Plaintiff’s proposed injunction against VTS LLC are reasonable.
+
+       The Court must pause, however, to address Plaintiff’s requests for injunctive relief against
+
+entities that are not party to this case. Plaintiff makes three requests of this sort: (1) “that the
+
+domain name registries, registrars, and privacy or proxy services [(hereinafter, the registrars)] for
+
+the Infringing Domains immediately transfer all such domain names to Plaintiff,” (2) that the
+
+registrars immediately transfer ownership and disclose Defendant’s contact information “if
+
+Defendant uses, registers, or otherwise acquires any additional [infringing] domain name(s),” and
+
+(3) “that the website hosting providers for any [infringing] websites that Defendant owns, operates,
+
+controls, or uses now or in the future . . . immediately terminate all of the hosting services for all
+
+such websites and shut down such websites.” ECF 9-1 at 3–4. The Court does not find that any of
+
+the three requests is appropriate.
+
+       Courts have long observed, in a variety of contexts, a “general rule against binding
+
+nonparties.” Smith v. Bayer Corp., 564 U.S. 299, 308 (2011). “It is elementary that one is not
+
+bound by a judgment in personam resulting from litigation in which he is not designated as a party
+
+or to which he has not been made a party by service of process.” Paleteria La Michoacana, Inc. v.
+
+Productos Lacteos Tocumbo S.A. de C.V., 188 F. Supp. 3d 22, 120 (D.D.C. 2016) (quoting Zenith
+
+Radio Corp. v. Hazeltine Rsch., Inc., 395 U.S. 100, 110 (1969)). In circumstances where
+
+exceptions to this rule are permitted, the Court’s ability to decide “which non-parties are bound by
+
+[an] injunction is necessarily as broad as (though no broader than) the non-party provisions in Fed.
+
+R. Civ. P. 65(d)(2)(B)–(C).” WMATA v. Reliable Limousine Serv., LLC, 985 F. Supp. 2d 23, 30
+
+(D.D.C. 2013) (citing United States v. Philip Morris USA Inc., 566 F.3d 1095, 1136 (D.C. Cir.
+
+2009)). Under Rule 65(d)(2), in addition to named parties and their agents, an injunctive order
+
+
+
+                                                 10
+binds only those “persons who are in active concert or participation” with the aforementioned
+
+groups. In other words, those who “aid[] or abet[] an enjoined party in violating the injunction” or
+
+are “in privity with an enjoined party.” Blockowicz v. Williams, 630 F.3d 563, 567 (7th Cir. 2010).
+
+        Turning to Plaintiff’s requests for injunctive relief against the registrars, the Court will now
+
+explain why it must deny these requests. Verizon seeks an order compelling the registrars to
+
+transfer the infringing domains plus any “additional [infringing] domain[s]” that Defendant might
+
+register in the future. ECF 9-1 at 3–4. To Verizon’s credit, it is irrefutable that the ACPA allows
+
+“a court [to] order the forfeiture or cancellation of the domain name of the transfer of the domain
+
+name to the owner of the mark.” 15 U.S.C. § 1125(d)(1)(C). The issue is that this provision is
+
+silent as to whether non-party registrars (or any entity not named as a defendant for that matter)
+
+ought to be bound by such an order. Yet after applying “the cardinal rule that a statute is to be read
+
+as a whole,” King v. St. Vincent’s Hosp., 502 U.S. 215, 221 (1991), the answer becomes clear:
+
+there is no indication in the ACPA that Congress intended to authorize third-party injunctions, let
+
+alone injunctions requiring third parties to forever police unlawful conduct that might occur in the
+
+future. In fact, the statute suggests the opposite.
+
+        The text and structure of the ACPA counsel against granting Plaintiff’s request to enjoin
+
+the registrars. For purposes of in rem actions, for example, Congress provided courts with the
+
+limited authority to order registrars to “expeditiously deposit with the court documents sufficient
+
+to establish the court’s control and authority regarding the disposition of the registration and use
+
+of the domain name . . . and not transfer, suspend, or otherwise modify the domain name during
+
+the pendency of the action” (lest the Court lose its basis for jurisdiction). 15 U.S.C.
+
+§ 1125(d)(2)(D)(i). Congress plainly did not expand that authority any further seeing as, unless the
+
+registrars act with “bad faith or reckless disregard” in these actions, “[t]he domain name registrar
+
+
+
+                                                  11
+or registry or other domain name authority shall not be liable for injunctive or monetary relief.”
+
+Id. § 1125(d)(2)(D)(ii) (emphasis added). Moreover, a court is only empowered to order “the
+
+transfer of the domain name,” i.e., the one proven in court to have been unlawfully “register[ed],
+
+traffic[ked] in, or use[d]” by the defendant. 15 U.S.C. § 1125(d)(1)(A)(ii), (d)(1)(C) (emphasis
+
+added). It does not empower a court to order the transfer of a domain that does not yet exist. Plus,
+
+as a practical matter, to the extent Verizon is concerned about potential future violations,
+
+“Defendant will already be enjoined from registering additional trademarked or confusingly
+
+similar domain names.” Bittorrent, Inc., 2014 WL 5773197, at *14.
+
+       Plaintiff’s reliance on caselaw outside of this circuit does not establish that its request to
+
+enjoin the registrars is “in accordance with Fed. R. Civ. P. 65(d)(2)(A)–(C).” Contra ECF 14 at 2.
+
+Verizon points to other districts that have issued third-party injunctions against registrars,
+
+concluding that such relief is authorized as “necessary to effectuate the purposes of the injunction,”
+
+see, e.g., eAdGear, Inc., 2012 WL 2367805, at *17, but the Court is not convinced. For starters,
+
+the caselaw from other districts does not uniformly support Verizon. See, e.g., Rylee & Cru, Inc.
+
+v. Zhu, No. 23-CV-120, 2023 WL 355945, at *6 (D. Colo. Jan. 23, 2023) (“Because R&C has
+
+alleged only inactivity on the part of Name.com, the Court finds that it may not bind the registrar
+
+to the terms of the TRO order under Rule 65(d)(2)(C).”); BMW of N. Am., LLC v. Issa, No. 2:19-
+
+CV-220, 2020 WL 1325278, at *6 (D. Utah Mar. 20, 2020) (similar). Indeed, some of Verizon’s
+
+own cases (submitted in ECF 14) directly undermine its request, see, e.g., Curtis, 45 F. Supp. 3d
+
+at 1204 (“[T]he Court declines to issue the Order directly to the domain-name registrars.”), while
+
+others are distinguishable insofar as the courts issuing such injunctions did so only after finding
+
+that the registrars “[we]re ‘in active concert or participation’ with [defendant’s] infringing
+
+activities” or that, at minimum, the registrars “ha[d] not objected” after receiving actual notice of
+
+
+
+                                                 12
+the requested order, see, e.g., DISH Network, L.L.C. v. Dima Furniture Inc., No. 17-3817,
+
+2019 WL 2498224, at *9 (D. Md. June 17, 2019).
+
+         Regardless of the holdings from other districts—which are not binding on this Court
+
+anyway—an injunction against the registrars is inappropriate here because this Court does not find,
+
+nor has Plaintiff alleged, that the registrars are in privity with VTS LLC or that they have aided
+
+and abetted VTS LLC’s misconduct. The registrars are not party to this proceeding, they are not
+
+agents or officers of Defendant, they have not yet obstructed any domain transfer, and they cannot
+
+have been on notice of a judicial order declaring VTS LLC’s conduct unlawful because such an
+
+order did not exist prior to today. 2 As such, the registrars fall outside the ambit of Rule 65(d)(2),
+
+and the Court declines to issue an order that hangs the coercive threat of contempt above their
+
+heads. See 15 U.S.C. § 1116(a) (injunctions “shall be operative and may be enforced by
+
+proceedings to punish for contempt”). Instead, the Court will issue an order that, in conjunction
+
+with an injunction against VTS LLC requiring it to transfer infringing domains to Verizon, will
+
+authorize the registrars to transfer the domains to Verizon “at Plaintiff’s request and upon being
+
+provided a copy of this order, whether or not Defendant has authorized the transfer.” Cf. Bittorrent,
+
+Inc., 2014 WL 5773197, at *14. This modification, along with the other comprehensive terms of
+
+the injunction, leaves Verizon well protected against any continued harm from VTS LLC without
+
+exceeding the bounds of this Court’s authority. At bottom, a direct order against the registrars is
+
+neither permissible nor necessary to effectuate the injunction—after all, “the registrars . . . [still]
+
+
+
+
+2
+  To be clear, the Court does not suggest that mere notice and inaction would be sufficient to render the registrars “in
+active concert or participation” with VTS LLC. On this point, the Court tends to agree with the rationale of the
+Seventh Circuit in Blockowicz v. Williams. See 630 F.3d at 568 (“[T]he fact that Xcentric is technologically capable
+of removing the postings does not render its failure to do so aiding and abetting. . . . [M]ere inactivity is simply
+inadequate to render them aiders and abettors in violating the injunction.”).
+
+                                                          13
+may not take any actions to impede or otherwise interfere with [the injunction].” See Curtis, 45 F.
+
+Supp. 3d at 1204; see ECF 14 at 2 (citing Curtis as authority supporting Verizon’s motion).
+
+       As to the final term of Plaintiff’s proposed injunction, which targets website hosting
+
+providers, the Court denies that request as well. Plaintiff’s counsel acknowledged in the December
+
+12, 2023 hearing that this relief is unnecessary so long as there is a way to transfer the domains,
+
+which there certainly is under the Court’s injunction described above. But even without that
+
+concession, the Court would still deny an injunction against these nonparties as inconsistent with
+
+the ACPA (which does not mention “website hosting providers”), Rule 65(d)(2), and general
+
+principles prohibiting injunctions against nonparties, for the same reasons already listed.
+
+III.   CONCLUSION
+
+       For the foregoing reasons, Plaintiff’s motion for default judgment, ECF 9, is GRANTED
+
+IN PART and DENIED IN PART. The Court will, as Plaintiff requested, dismiss the Second,
+
+Fifth, Sixth, and Seventh causes of action in Plaintiff’s Complaint without prejudice. The Court
+
+will also award Plaintiff $450,000 in statutory damages and adopt the terms of Plaintiff’s proposed
+
+permanent injunction, as modified above and as set out in the Order accompanying this
+
+memorandum opinion.
+
+       SO ORDERED.
+
+                                                      __________________________
+                                                      JIA M. COBB
+                                                      United States District Judge
+
+Date: January 4, 2024
+
+
+
+
+                                                14
+
+
+
+
+Source: https://www.courtlistener.com/case/9457255/

@@ -1,0 +1,42 @@
+{
+  "name": "CrimeJournal - AI Legal Case Research",
+  "short_name": "CrimeJournal",
+  "description": "AI-powered legal case research platform. Search millions of legal cases, get AI summaries, and discover similar precedents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities", "education"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Search Cases",
+      "short_name": "Search",
+      "description": "Search legal cases",
+      "url": "/search",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "My Favorites",
+      "short_name": "Favorites",
+      "description": "View saved cases",
+      "url": "/favorites",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

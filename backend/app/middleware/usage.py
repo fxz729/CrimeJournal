@@ -12,23 +12,22 @@ Usage Limit Middleware
 import logging
 from datetime import datetime, date
 from collections import defaultdict
-from typing import Callable, Optional
-from threading import Lock
+from typing import Callable
 
 from fastapi import Request, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.responses import Response, JSONResponse
 
-from app.api.auth import get_optional_user
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# ==================== In-Memory Usage Tracking ====================
-# TODO: 后续集成真实数据库
+# ==================== Usage Tracking Functions (SQLite-backed) ====================
 
-# 用量存储: user_id -> { "YYYY-MM-DD": count }
-_usage_db: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+def get_today_str() -> str:
+    """获取今天的日期字符串"""
+    return date.today().isoformat()
+
 
 # 每日限制配置
 DAILY_SEARCH_LIMITS = {
@@ -37,32 +36,46 @@ DAILY_SEARCH_LIMITS = {
     "enterprise": -1,  # unlimited
 }
 
-# 最近检查过的用户（用于调试/日志）
-_last_checked: dict[int, str] = {}
-
-# 线程安全锁
-_usage_lock = Lock()
-
-
-# ==================== Usage Tracking Functions ====================
-
-def get_today_str() -> str:
-    """获取今天的日期字符串"""
-    return date.today().isoformat()
-
 
 def get_user_daily_usage(user_id: int) -> int:
-    """获取用户今日搜索次数"""
-    today_str = get_today_str()
-    return _usage_db[user_id].get(today_str, 0)
+    """获取用户今日搜索次数（从 SQLite 读取）"""
+    from app.api.auth import get_session_local, DBUser
+    SessionLocal = get_session_local()
+    db = SessionLocal()
+    try:
+        user = db.query(DBUser).filter(DBUser.id == user_id).first()
+        if user is None:
+            return 0
+        today = datetime.utcnow().date()
+        if user.last_search_date is None:
+            return 0
+        if user.last_search_date.date() != today:
+            return 0
+        return user.daily_search_count or 0
+    finally:
+        db.close()
 
 
 def increment_user_usage(user_id: int) -> int:
-    """增加用户今日搜索次数，返回新的计数"""
-    today_str = get_today_str()
-    with _usage_lock:
-        _usage_db[user_id][today_str] += 1
-        return _usage_db[user_id][today_str]
+    """增加用户今日搜索次数，返回新的计数（写入 SQLite）"""
+    from app.api.auth import get_session_local, DBUser
+    SessionLocal = get_session_local()
+    db = SessionLocal()
+    try:
+        user = db.query(DBUser).filter(DBUser.id == user_id).first()
+        if user is None:
+            return 0
+        today = datetime.utcnow().date()
+        last_date = user.last_search_date.date() if user.last_search_date else None
+        if last_date != today:
+            user.daily_search_count = 1
+        else:
+            user.daily_search_count = (user.daily_search_count or 0) + 1
+        user.last_search_date = datetime.utcnow()
+        db.commit()
+        return user.daily_search_count
+    finally:
+        db.close()
 
 
 def get_daily_limit(subscription_tier: str) -> int:
@@ -100,30 +113,7 @@ def check_and_record_search(user_id: int, subscription_tier: str) -> tuple[bool,
     return True, "", count, daily_limit
 
 
-def cleanup_old_entries():
-    """
-    清理过期的用量记录
-
-    保留最近 7 天的数据，删除更旧的记录
-    生产环境应该在数据库层面处理，或使用 TTL
-    """
-    from datetime import timedelta
-    cutoff = (date.today() - timedelta(days=7)).isoformat()
-
-    with _usage_lock:
-        for user_id in list(_usage_db.keys()):
-            user_usage = _usage_db[user_id]
-            keys_to_delete = [k for k in user_usage if k < cutoff]
-            for k in keys_to_delete:
-                del user_usage[k]
-
-            # 如果用户没有数据了，删除用户条目
-            if not user_usage:
-                del _usage_db[user_id]
-
-
 # ==================== ASGI Middleware ====================
-# 注意：FastAPI 路径参数可能需要从请求中获取 user_id
 
 
 class UsageLimitMiddleware(BaseHTTPMiddleware):
@@ -167,16 +157,48 @@ class UsageLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         try:
+            # Local import to avoid circular dependency at module load time
+            from app.api.auth import decode_token, get_session_local, DBUser
+            from app.api.subscriptions import SUBSCRIPTION_PLANS
+
             # 解析 token 获取用户信息
-            from app.api.auth import decode_token
             token = auth_header.replace("Bearer ", "")
             payload = decode_token(token)
             user_id = int(payload.get("sub"))
             email = payload.get("email")
 
+            # 从 SQLite 读取订阅等级
+            SessionLocal = get_session_local()
+            db_session = SessionLocal()
+            try:
+                user = db_session.query(DBUser).filter(DBUser.id == user_id).first()
+                subscription_tier = user.subscription_tier if user else "free"
+            finally:
+                db_session.close()
+            daily_limit = SUBSCRIPTION_PLANS.get(subscription_tier, SUBSCRIPTION_PLANS["free"]).get("searches_per_day", 10)
+
+            # 如果是受限用户，检查是否超限（限制前检查，不占用本次配额）
+            if daily_limit != -1:
+                current_usage = get_user_daily_usage(user_id)
+                if current_usage >= daily_limit:
+                    logger.warning(
+                        f"Usage limit exceeded - user {email}: "
+                        f"{current_usage}/{daily_limit}"
+                    )
+                    return JSONResponse(
+                        status_code=429,
+                        content={
+                            "error": "daily_limit_reached",
+                            "message": f"Daily search limit reached ({current_usage}/{daily_limit}). "
+                                       f"Please upgrade to Pro for unlimited searches.",
+                            "current_usage": current_usage,
+                            "daily_limit": daily_limit,
+                            "upgrade_url": "/upgrade",
+                        },
+                    )
+
             # 记录搜索（用于统计）
             increment_user_usage(user_id)
-            _last_checked[user_id] = f"{get_today_str()} {datetime.utcnow().isoformat()}"
 
             logger.debug(
                 f"Usage tracked - user {email}: "

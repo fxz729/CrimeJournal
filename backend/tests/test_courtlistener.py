@@ -170,20 +170,44 @@ class TestCourtListenerClient:
     async def test_get_opinion_by_id(self, initialized_client):
         """根据ID获取判例"""
         with patch.object(initialized_client._client, "get") as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
+            # 第一个调用：/opinions/123/
+            mock_opinion_response = MagicMock()
+            mock_opinion_response.json.return_value = {
                 "id": 123,
-                "cluster": {"id": 123, "case_name": "Test Case"},
-                "plain_text": "Case text here",
+                "cluster": "https://www.courtlistener.com/api/rest/v4/clusters/456/",
+                "plain_text": "This is a comprehensive test case document that contains more than one hundred characters of legal text content for testing purposes. The quick brown fox jumps over the lazy dog while the case progresses through the court system.",
+                "html": "",
+                "html_with_citations": "",
             }
-            mock_response.raise_for_status = MagicMock()
-            mock_get.return_value = mock_response
+            mock_opinion_response.raise_for_status = MagicMock()
+
+            # 第二个调用：cluster URL
+            mock_cluster_response = MagicMock()
+            mock_cluster_response.json.return_value = {
+                "id": 456,
+                "case_name": "Test Case",
+                "docket": "https://www.courtlistener.com/api/rest/v4/dockets/789/",
+            }
+            mock_cluster_response.raise_for_status = MagicMock()
+
+            # 第三个调用：docket URL
+            mock_docket_response = MagicMock()
+            mock_docket_response.json.return_value = {
+                "id": 789,
+                "court_id": "ca9",
+                "docket_number": "CR-2024-001",
+            }
+            mock_docket_response.raise_for_status = MagicMock()
+
+            mock_get.side_effect = [mock_opinion_response, mock_cluster_response, mock_docket_response]
 
             result = await initialized_client.get_opinion_by_id(123)
 
-        assert result["id"] == 123
-        assert "cluster" in result
-        mock_get.assert_called_once_with("/opinions/123/")
+            assert result["id"] == 123
+            assert "cluster" in result
+            assert result["plain_text"] == "This is a comprehensive test case document that contains more than one hundred characters of legal text content for testing purposes. The quick brown fox jumps over the lazy dog while the case progresses through the court system."
+            # 验证调用次数
+            assert mock_get.call_count == 3
 
     @pytest.mark.asyncio
     async def test_get_opinion_by_id_not_found(self, initialized_client):
@@ -305,19 +329,38 @@ class TestCourtListenerClient:
     async def test_get_cluster_by_id(self, initialized_client):
         """获取簇信息"""
         with patch.object(initialized_client._client, "get") as mock_get:
-            mock_response = MagicMock()
-            mock_response.json.return_value = {
+            mock_cluster_response = MagicMock()
+            mock_cluster_response.json.return_value = {
                 "id": 789,
                 "case_name": "Cluster Case",
-                "sub_opinions": [1, 2, 3],
+                "docket": "https://www.courtlistener.com/api/rest/v4/dockets/101/",
+                "sub_opinions": ["https://www.courtlistener.com/api/rest/v4/opinions/100/"],
             }
-            mock_response.raise_for_status = MagicMock()
-            mock_get.return_value = mock_response
+            mock_cluster_response.raise_for_status = MagicMock()
+
+            mock_docket_response = MagicMock()
+            mock_docket_response.json.return_value = {
+                "id": 101,
+                "court_id": "ca9",
+            }
+            mock_docket_response.raise_for_status = MagicMock()
+
+            mock_opinion_response = MagicMock()
+            mock_opinion_response.json.return_value = {
+                "id": 100,
+                "plain_text": "This is a comprehensive opinion text for testing cluster retrieval with more than one hundred characters of case content.",
+                "html": "",
+                "html_with_citations": "",
+            }
+            mock_opinion_response.raise_for_status = MagicMock()
+
+            mock_get.side_effect = [mock_cluster_response, mock_docket_response, mock_opinion_response]
 
             result = await initialized_client.get_cluster_by_id(789)
 
         assert result["id"] == 789
-        mock_get.assert_called_once_with("/clusters/789/")
+        assert result["case_name"] == "Cluster Case"
+        assert result["_first_opinion"]["plain_text"] != ""
 
     # ==================== 引用搜索 ====================
 

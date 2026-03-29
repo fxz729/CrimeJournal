@@ -1,10 +1,16 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, FileText, Calendar, MapPin, Loader2, Star, Share2, Link2, Check } from 'lucide-react'
-import { casesApi, favoritesApi } from '../lib/api'
+import {
+  ArrowLeft, FileText, Calendar, MapPin, Loader2, Star, Check,
+  Download, Languages, ChevronDown, ChevronUp, ExternalLink, Copy, AlertCircle,
+  Wifi, Clock, AlertTriangle, XCircle, Link2, Lock, Zap
+} from 'lucide-react'
+import { casesApi, favoritesApi, subscriptionApi } from '../lib/api'
 import { useI18n } from '../lib/i18n'
+import { useAuth } from '../lib/auth'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import ThemeSwitcher from '../components/ThemeSwitcher'
 
 interface CaseItem {
   id: number
@@ -18,10 +24,12 @@ interface CaseItem {
   citation: string
   docket_number: string
   plain_text: string
+  plain_text_formatted?: string
   html_text: string
   summary: string
   keywords: string[]
   entities: Record<string, string[]>
+  source_url?: string
 }
 
 interface SimilarCase {
@@ -32,6 +40,156 @@ interface SimilarCase {
   similarity: number
 }
 
+type ErrorType = 'not_found' | 'rate_limit' | 'server_error' | 'network' | 'unknown'
+
+function getErrorInfo(status: number, message: string): { type: ErrorType; titleKey: string; descriptionKey: string; icon: typeof AlertCircle } {
+  // Normalize message for matching
+  const normalizedMessage = String(message || '').toLowerCase()
+
+  if (status === 404 || message.includes('不存在') || normalizedMessage.includes('not found')) {
+    return {
+      type: 'not_found',
+      titleKey: 'case.errorNotFound',
+      descriptionKey: 'case.errorNotFoundDesc',
+      icon: XCircle,
+    }
+  }
+  if (status === 429 || message.includes('频繁') || normalizedMessage.includes('rate limit') || normalizedMessage.includes('too many request')) {
+    return {
+      type: 'rate_limit',
+      titleKey: 'case.errorRateLimit',
+      descriptionKey: 'case.errorRateLimitDesc',
+      icon: Clock,
+    }
+  }
+  if (status === 502 || status === 503 || status === 504 || message.includes('暂时不可用') || normalizedMessage.includes('service unavailable') || normalizedMessage.includes('bad gateway')) {
+    return {
+      type: 'server_error',
+      titleKey: 'case.errorServerUnavailable',
+      descriptionKey: 'case.errorServerUnavailableDesc',
+      icon: Wifi,
+    }
+  }
+  if (status === 0 || message.includes('network') || message.includes('Network') || message.includes('fetch') || message.includes('failed to fetch') || normalizedMessage.includes('network error')) {
+    return {
+      type: 'network',
+      titleKey: 'case.errorNetwork',
+      descriptionKey: 'case.errorNetworkDesc',
+      icon: AlertTriangle,
+    }
+  }
+  if (status === 401 || status === 403) {
+    return {
+      type: 'not_found',
+      titleKey: 'case.errorAccessDenied',
+      descriptionKey: 'case.errorAccessDeniedDesc',
+      icon: AlertCircle,
+    }
+  }
+  // For any other error, show a more helpful message with the actual error
+  const displayMessage = message && message.length > 0 && message !== 'Request failed with status code 500'
+    ? message
+    : ''
+  return {
+    type: 'unknown',
+    titleKey: 'case.errorUnexpected',
+    descriptionKey: displayMessage || 'case.errorUnexpected',
+    icon: AlertCircle,
+  }
+}
+
+function SkeletonBlock({ className = '' }: { className?: string }) {
+  return (
+    <div className={`animate-pulse rounded-lg bg-gray-200 dark:bg-gray-700 ${className}`} />
+  )
+}
+
+function CaseSkeleton() {
+  return (
+    <div className="space-y-6">
+      {/* Header skeleton */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-100 dark:border-gray-700">
+        <SkeletonBlock className="h-8 w-3/4 mb-4" />
+        <div className="flex gap-4 mb-4">
+          <SkeletonBlock className="h-5 w-32" />
+          <SkeletonBlock className="h-5 w-40" />
+          <SkeletonBlock className="h-5 w-24" />
+        </div>
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-5/6" />
+        <div className="flex gap-2 mt-4">
+          <SkeletonBlock className="h-6 w-16 rounded-full" />
+          <SkeletonBlock className="h-6 w-20 rounded-full" />
+          <SkeletonBlock className="h-6 w-14 rounded-full" />
+        </div>
+      </div>
+      {/* Summary skeleton */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-100 dark:border-gray-700">
+        <SkeletonBlock className="h-6 w-32 mb-4" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-4/5 mb-2" />
+        <SkeletonBlock className="h-4 w-3/4" />
+      </div>
+      {/* Full text skeleton */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 border border-gray-100 dark:border-gray-700">
+        <SkeletonBlock className="h-6 w-32 mb-4" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-3/4 mb-2" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-5/6 mb-2" />
+        <SkeletonBlock className="h-4 w-full mb-2" />
+        <SkeletonBlock className="h-4 w-2/3" />
+      </div>
+    </div>
+  )
+}
+
+function ErrorDisplay({ status, message, onRetry }: { status: number; message: string; onRetry: () => void }) {
+  const { t } = useI18n()
+  const errorInfo = getErrorInfo(status, message)
+  const ErrorIcon = errorInfo.icon
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20 px-4">
+      <div className="w-16 h-16 rounded-2xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center mb-6 border border-red-100 dark:border-red-800/30">
+        <ErrorIcon className="h-8 w-8 text-red-500 dark:text-red-400" />
+      </div>
+      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t(errorInfo.titleKey as any)}</h2>
+      <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">{t(errorInfo.descriptionKey as any)}</p>
+      <div className="flex gap-3">
+        <button
+          onClick={onRetry}
+          className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2"
+        >
+          <Loader2 className="h-4 w-4" />
+          {t('common.retry')}
+        </button>
+        <button
+          onClick={() => window.history.back()}
+          className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm font-medium flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t('common.back')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+const TRANSLATION_LANGUAGES = [
+  { value: 'English', label: 'English' },
+  { value: 'Chinese', label: '中文' },
+  { value: 'Spanish', label: 'Español' },
+  { value: 'French', label: 'Français' },
+  { value: 'German', label: 'Deutsch' },
+  { value: 'Japanese', label: '日本語' },
+  { value: 'Korean', label: '한국어' },
+  { value: 'Arabic', label: 'العربية' },
+]
+
 export default function CaseDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -40,25 +198,128 @@ export default function CaseDetail() {
   const caseId = Number(id)
 
   const [copied, setCopied] = useState(false)
+  const [textExpanded, setTextExpanded] = useState(false)
+  const [translateLanguage, setTranslateLanguage] = useState('Chinese')
+  const [translationResult, setTranslationResult] = useState<string | null>(null)
+  const [translationLoading, setTranslationLoading] = useState(false)
+  const [translationCopied, setTranslationCopied] = useState(false)
+  const [translationError, setTranslationError] = useState<string | null>(null)
+  const [shareLinkCreated, setShareLinkCreated] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [formattedText, setFormattedText] = useState<string | null>(null)
+  const [isFormatting, setIsFormatting] = useState(false)
+  const [formatError, setFormatError] = useState(false)
+  const [showFormatted, setShowFormatted] = useState(false)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState<string | null>(null)
+  const [generatedSummary, setGeneratedSummary] = useState<string | null>(null)
 
-  const { data: caseData, isLoading, error, refetch } = useQuery({
+  const { data: caseData, isLoading, error, refetch, isError } = useQuery({
     queryKey: ['case', id],
     queryFn: () => casesApi.getById(caseId),
     enabled: !!id,
   })
 
+  const hasToken = !!localStorage.getItem('token')
+  const { user } = useAuth()
+
+  // Query subscription plan to get latest feature flags
+  const { data: subscriptionData } = useQuery({
+    queryKey: ['subscription'],
+    queryFn: () => subscriptionApi.getMySubscription(),
+    enabled: !!hasToken,
+  })
+
+  const currentPlan = subscriptionData?.data?.plan || user?.subscription_tier || 'free'
+
+  const canAI = currentPlan !== 'free'
+  const canSimilar = currentPlan === 'pro' || currentPlan === 'enterprise'
+
   const { data: favoriteStatus } = useQuery({
     queryKey: ['favorite', caseId],
     queryFn: () => favoritesApi.check(caseId),
-    enabled: !!id,
+    enabled: !!id && hasToken,
     retry: false,
   })
 
   const { data: similarData } = useQuery({
     queryKey: ['similar', caseId],
     queryFn: () => casesApi.getSimilar(caseId),
-    enabled: !!id,
+    enabled: !!id && !!hasToken && canSimilar,
   })
+
+  const formatMutation = useMutation({
+    mutationFn: () => casesApi.formatText(caseId),
+    mutationKey: ['formatText', caseId],
+    onSuccess: (data) => {
+      setFormattedText(data.data?.plain_text_formatted || null)
+      setShowFormatted(true)
+      setIsFormatting(false)
+      setFormatError(false)
+    },
+    onError: () => {
+      setIsFormatting(false)
+      setFormatError(true)
+    },
+  })
+
+  const summaryMutation = useMutation({
+    mutationFn: () => casesApi.summarize(caseId),
+    mutationKey: ['summaryMutation', caseId],
+    onSuccess: (data) => {
+      setSummaryLoading(false)
+      setSummaryError(null)
+      // 直接使用 mutation 返回的摘要，而非依赖 case query refetch
+      const summaryText = data.data?.summary || null
+      setGeneratedSummary(summaryText)
+      queryClient.invalidateQueries({ queryKey: ['case', id] })
+    },
+    onError: () => {
+      setSummaryLoading(false)
+      setSummaryError(t('case.summaryError') || 'Failed to generate summary')
+    },
+  })
+
+  const handleFormatText = () => {
+    if (formattedText) {
+      setShowFormatted(!showFormatted)
+      return
+    }
+    setIsFormatting(true)
+    setFormatError(false)
+    formatMutation.mutate()
+  }
+
+  const translateMutation = useMutation({
+    mutationFn: () => casesApi.translate(caseId, translateLanguage),
+    onSuccess: (data) => {
+      setTranslationResult(data.data?.translated_text || '')
+      setTranslationLoading(false)
+      setTranslationError(null)
+    },
+    onError: () => {
+      setTranslationLoading(false)
+      setTranslationError(t('case.translateError'))
+    },
+  })
+
+  const handleTranslate = () => {
+    if (translationResult) {
+      setTranslationResult(null)
+      return
+    }
+    setTranslationError(null)
+    setTranslationLoading(true)
+    translateMutation.mutate()
+  }
+
+  const handleCopyTranslation = () => {
+    if (translationResult) {
+      navigator.clipboard.writeText(translationResult)
+      setTranslationCopied(true)
+      setTimeout(() => setTranslationCopied(false), 2000)
+    }
+  }
 
   const addFavoriteMutation = useMutation({
     mutationFn: () => {
@@ -83,11 +344,6 @@ export default function CaseDetail() {
     },
   })
 
-  const caseItem: CaseItem | undefined = caseData?.data
-  const isFavorited = favoriteStatus?.data?.is_favorited || false
-  const favoriteId = favoriteStatus?.data?.favorite_id || null
-  const similarCases: SimilarCase[] = similarData?.data?.similar_cases || []
-
   const handleFavorite = () => {
     if (isFavorited && favoriteId) {
       removeFavoriteMutation.mutate(favoriteId)
@@ -104,138 +360,398 @@ export default function CaseDetail() {
     })
   }
 
+  const handleCreateShareLink = async () => {
+    if (shareLinkCreated && shareUrl) {
+      navigator.clipboard.writeText(shareUrl)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+      return
+    }
+    try {
+      const result = await casesApi.createShareLink(caseId)
+      const url = result.data?.share_url || `${window.location.origin}/shared/${result.data?.token}`
+      setShareUrl(url)
+      setShareLinkCreated(true)
+      navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      handleShare()
+    }
+  }
+
+  const handleExportTxt = () => {
+    const item = caseData?.data
+    if (!item) return
+    const displayText = item.plain_text || ''
+    const fullText = textExpanded ? displayText : displayText.substring(0, 2000) + (displayText.length > 2000 ? '\n\n[... text truncated ...]' : '')
+    const translatedText = translationResult ? `\n\n=== TRANSLATION (${translateLanguage}) ===\n${translationResult}` : ''
+
+    const content = [
+      `Case: ${item.case_name}`,
+      `Court: ${item.court || 'N/A'}`,
+      `Date Filed: ${item.date_filed ? new Date(item.date_filed).toLocaleDateString() : 'N/A'}`,
+      `Citation: ${item.citation || 'N/A'}`,
+      `Docket: ${item.docket_number || 'N/A'}`,
+      '',
+      `=== AI SUMMARY ===`,
+      item.summary || 'N/A',
+      '',
+      `=== CASE TEXT ===`,
+      fullText,
+      '',
+      translatedText,
+      '',
+      `Source: ${item.source_url || `https://www.courtlistener.com/redoc/${caseId}/`}`,
+    ].join('\n')
+
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    const slugName = item.case_name.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '_').substring(0, 50)
+    a.href = url
+    a.download = `${slugName}_${caseId}.txt`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const caseItem: CaseItem | undefined = caseData?.data
+  const isFavorited = favoriteStatus?.data?.is_favorited || false
+  const favoriteId = favoriteStatus?.data?.favorite_id || null
+  const similarCases: SimilarCase[] = similarData?.data?.similar_cases || []
+
+  const errorStatus = (error as any)?.response?.status || (error as any)?.status || 0
+  const errorMessage = (error as any)?.response?.data?.detail
+    || (error as any)?.response?.data?.message
+    || (error as any)?.response?.statusText
+    || (error as any)?.message
+    || String(error) || ''
+
+  const TEXT_PREVIEW_LENGTH = 2000
+  const displayText = caseItem?.plain_text || ''
+  const needsTruncation = displayText.length > TEXT_PREVIEW_LENGTH
+  const textToShow = textExpanded || !needsTruncation ? displayText : displayText.substring(0, TEXT_PREVIEW_LENGTH)
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="bg-white/80 dark:bg-gray-800/80 border-b border-gray-100 dark:border-gray-700/50 sticky top-0 z-50 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="flex items-center gap-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors text-sm"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
               {t('common.back')}
             </button>
-            <div className="flex items-center gap-2">
-              <FileText className="h-6 w-6 text-primary-600" />
-              <span className="font-serif text-xl font-bold">CrimeJournal</span>
-            </div>
+            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700" />
+            <button onClick={() => navigate('/')} className="flex items-center gap-2 group">
+              <div className="w-7 h-7 rounded-lg bg-primary-600 dark:bg-primary-500 flex items-center justify-center group-hover:bg-primary-700 dark:group-hover:bg-primary-600 transition-colors">
+                <FileText className="h-3.5 w-3.5 text-white" />
+              </div>
+              <span className="font-serif text-lg font-bold text-gray-900 dark:text-white hidden sm:block">{t('common.brand')}</span>
+            </button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
+            <ThemeSwitcher />
             <LanguageSwitcher />
+            <div className="h-5 w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
             <button
               onClick={handleFavorite}
               disabled={addFavoriteMutation.isPending || removeFavoriteMutation.isPending}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition ${
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${
                 isFavorited
-                  ? 'text-yellow-500 bg-yellow-50 hover:bg-yellow-100'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30'
+                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
               }`}
             >
-              <Star className="h-5 w-5" fill={isFavorited ? 'currentColor' : 'none'} />
-              {isFavorited ? t('case.removeFavorite') : t('case.addFavorite')}
-            </button>
-            <button
-              onClick={handleShare}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-5 w-5 text-green-500" />
-                  {t('case.shareSuccess')}
-                </>
-              ) : (
-                <>
-                  <Share2 className="h-5 w-5" />
-                  {t('common.share')}
-                </>
-              )}
+              <Star className="h-4 w-4" fill={isFavorited ? 'currentColor' : 'none'} />
+              <span className="hidden md:inline">{isFavorited ? t('case.removeFavorite') : t('case.addFavorite')}</span>
             </button>
           </div>
         </div>
       </header>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {isLoading && (
-          <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-            <span className="ml-3 text-gray-600">{t('common.loading')}</span>
-          </div>
-        )}
+        {/* Loading skeleton */}
+        {isLoading && <CaseSkeleton />}
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            <span>{t('common.error')}</span>
+        {/* Empty state - no loading, no error, no data */}
+        {!isLoading && !isError && !caseItem && (
+          <div className="flex flex-col items-center justify-center py-20 px-4">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-6 border border-gray-200 dark:border-gray-700">
+              <FileText className="h-8 w-8 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{t('case.loading')}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
+              Please wait while we fetch the case details.
+            </p>
             <button
               onClick={() => refetch()}
-              className="ml-auto text-sm underline hover:no-underline"
+              className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2"
             >
+              <Loader2 className="h-4 w-4" />
               {t('common.retry')}
             </button>
           </div>
         )}
 
-        {caseItem && (
-          <div className="space-y-6">
+        {/* Error display */}
+        {isError && !isLoading && (
+          <ErrorDisplay
+            status={errorStatus}
+            message={errorMessage}
+            onRetry={() => refetch()}
+          />
+        )}
+
+        {/* Content */}
+        {!isLoading && !isError && caseItem && (
+          <div className="space-y-5">
             {/* Case Header */}
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h1 className="text-3xl font-serif font-bold mb-4">
-                {caseItem.case_name}
-              </h1>
-
-              <div className="flex flex-wrap gap-6 text-gray-600 mb-6">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5" />
-                  {caseItem.court || t('common.noData')}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {t('case.filed')}: {caseItem.date_filed ? new Date(caseItem.date_filed).toLocaleDateString() : t('common.noData')}
-                </div>
-                {caseItem.citation && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    {caseItem.citation}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm hover:shadow-md">
+              {/* Colored left border accent */}
+              <div className="flex items-start gap-4">
+                <div className="flex-shrink-0 w-1 h-16 bg-primary-500 dark:bg-primary-400 rounded-full mt-1" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <h1 className="text-2xl sm:text-3xl font-serif font-bold text-gray-900 dark:text-white leading-tight">
+                      {caseItem.case_name}
+                    </h1>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      {/* View Original */}
+                      {caseItem.source_url && (
+                        <a
+                          href={caseItem.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 border border-gray-200 dark:border-gray-600 hover:border-primary-200 dark:hover:border-primary-700 transition-all"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          {t('case.viewOriginal')}
+                        </a>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              {caseItem.docket_number && (
-                <p className="text-sm text-gray-500">
-                  {t('case.docket')}: {caseItem.docket_number}
-                </p>
-              )}
+                  <div className="flex flex-wrap gap-5 mt-3 text-sm text-gray-500 dark:text-gray-400">
+                    {caseItem.court && (
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-4 w-4" />
+                        {caseItem.court}
+                      </div>
+                    )}
+                    {caseItem.date_filed && (
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-4 w-4" />
+                        {t('case.filed')}: {new Date(caseItem.date_filed).toLocaleDateString()}
+                      </div>
+                    )}
+                    {caseItem.citation && (
+                      <div className="flex items-center gap-1.5 font-mono text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">
+                        <FileText className="h-3.5 w-3.5" />
+                        {caseItem.citation}
+                      </div>
+                    )}
+                  </div>
 
-              {/* Keywords */}
-              {caseItem.keywords && caseItem.keywords.length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {caseItem.keywords.slice(0, 8).map((kw) => (
-                    <span
-                      key={kw}
-                      className="px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full"
-                    >
-                      {kw}
-                    </span>
-                  ))}
+                  {caseItem.docket_number && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 font-mono">
+                      {t('case.docket')}: {caseItem.docket_number}
+                    </p>
+                  )}
+
+                  {/* Keywords */}
+                  {caseItem.keywords && caseItem.keywords.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-4">
+                      {caseItem.keywords.slice(0, 10).map((kw) => (
+                        <span
+                          key={kw}
+                          className="px-2.5 py-0.5 text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full border border-primary-100 dark:border-primary-800/40"
+                        >
+                          {kw}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              </div>
+            </div>
+
+            {/* Action Bar */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={handleFavorite}
+                disabled={addFavoriteMutation.isPending || removeFavoriteMutation.isPending}
+                className={`sm:hidden flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-all text-sm ${
+                  isFavorited
+                    ? 'text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20'
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                }`}
+              >
+                <Star className="h-4 w-4" fill={isFavorited ? 'currentColor' : 'none'} />
+              </button>
+
+              {/* Export TXT */}
+              <button
+                onClick={handleExportTxt}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:text-emerald-700 dark:hover:text-emerald-300 border border-gray-200 dark:border-gray-700 hover:border-emerald-200 dark:hover:border-emerald-800/40 transition-all"
+              >
+                <Download className="h-4 w-4" />
+                {t('case.exportTxt')}
+              </button>
+
+              {/* Share Link */}
+              <button
+                onClick={handleCreateShareLink}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-900/20 hover:text-violet-700 dark:hover:text-violet-300 border border-gray-200 dark:border-gray-700 hover:border-violet-200 dark:hover:border-violet-800/40 transition-all"
+              >
+                <Link2 className="h-4 w-4" />
+                {shareLinkCreated ? t('case.copyLink') : t('case.shareLink')}
+              </button>
+
+              {copied && (
+                <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1 animate-fade-in">
+                  <Check className="h-3.5 w-3.5" /> {t('case.copied')}
+                </span>
               )}
             </div>
 
             {/* AI Summary */}
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">{t('case.summary')}</h2>
-              {caseItem.summary ? (
-                <p className="text-gray-700 leading-relaxed">{caseItem.summary}</p>
-              ) : (
-                <div>
-                  <p className="text-gray-500 mb-4">{t('case.aiPowered')}</p>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('case.summary')}</h2>
+                {(caseItem.summary || generatedSummary) && (
+                  <span className="text-xs text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-0.5 rounded-full font-medium">{t('case.aiGenerated')}</span>
+                )}
+              </div>
+              {(caseItem.summary || generatedSummary) ? (
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{generatedSummary || caseItem.summary}</p>
+              ) : !canAI ? (
+                <div className="text-center py-4">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Lock className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('case.lockedFeature')}</span>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.lockedFeatureDesc')}</p>
                   <button
-                    onClick={() => casesApi.summarize(caseId)}
-                    className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+                    onClick={() => navigate('/upgrade')}
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
                   >
-                    {t('case.generate')}
+                    <Zap className="h-4 w-4" />
+                    {t('upgrade.upgradePro')}
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.aiPowered')}</p>
+                  <button
+                    onClick={() => {
+                      setSummaryLoading(true)
+                      setSummaryError(null)
+                      summaryMutation.mutate()
+                    }}
+                    disabled={summaryLoading}
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium disabled:opacity-60 flex items-center gap-2 mx-auto"
+                  >
+                    {summaryLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        {t('case.generatingSummary')}
+                      </>
+                    ) : (
+                      t('case.generate')
+                    )}
+                  </button>
+                  {summaryError && (
+                    <p className="text-xs text-red-500 mt-2">{summaryError}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Translation Panel */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Languages className="h-5 w-5 text-primary-500" />
+                  {t('case.translationLabel')}
+                </h2>
+              </div>
+              {canAI ? (
+                <>
+              <div className="flex items-center gap-3 flex-wrap">
+                <select
+                  value={translateLanguage}
+                  onChange={(e) => setTranslateLanguage(e.target.value)}
+                  className="px-3 py-2 rounded-lg text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary-400 dark:focus:ring-primary-500 cursor-pointer"
+                >
+                  {TRANSLATION_LANGUAGES.map((lang) => (
+                    <option key={lang.value} value={lang.value}>{lang.label}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleTranslate}
+                  disabled={translationLoading}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium disabled:opacity-50"
+                >
+                  {translationLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : translationResult ? (
+                    <>
+                      <XCircle className="h-4 w-4" />
+                      {t('case.hideTranslation')}
+                    </>
+                  ) : (
+                    <>
+                      <Languages className="h-4 w-4" />
+                      {t('case.translateBtn') || 'Translate'}
+                    </>
+                  )}
+                </button>
+                {translationResult && (
+                  <button
+                    onClick={handleCopyTranslation}
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium bg-gray-50 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    {translationCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    {translationCopied ? t('case.copyTranslation') : t('case.copy')}
+                  </button>
+                )}
+              </div>
+
+              {translationResult && (
+                <div className="mt-4 p-4 bg-primary-50 dark:bg-primary-900/20 border border-primary-100 dark:border-primary-800/40 rounded-xl">
+                  <p className="text-sm text-primary-800 dark:text-primary-200 mb-2 font-medium">
+                    {translateLanguage} {t('case.translationLabel')}
+                  </p>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap">{translationResult}</p>
+                </div>
+              )}
+
+              {translationError && (
+                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-xl flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-red-500 dark:text-red-400 flex-shrink-0" />
+                  <p className="text-sm text-red-700 dark:text-red-300">{translationError}</p>
+                </div>
+              )}
+                </>
+              ) : (
+                <div className="text-center py-4">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Lock className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('case.lockedFeature')}</span>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.lockedFeatureDesc')}</p>
+                  <button
+                    onClick={() => navigate('/upgrade')}
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
+                  >
+                    <Zap className="h-4 w-4" />
+                    {t('upgrade.upgradePro')}
                   </button>
                 </div>
               )}
@@ -243,17 +759,17 @@ export default function CaseDetail() {
 
             {/* Entities */}
             {caseItem.entities && Object.keys(caseItem.entities).length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold mb-4">{t('case.keyEntities')}</h2>
-                <div className="space-y-4">
+              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('case.keyEntities')}</h2>
+                <div className="space-y-3">
                   {Object.entries(caseItem.entities).map(([type, entities]) => (
                     <div key={type}>
-                      <h3 className="text-sm font-medium text-gray-500 mb-2">{type}</h3>
-                      <div className="flex flex-wrap gap-2">
+                      <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">{type}</h3>
+                      <div className="flex flex-wrap gap-1.5">
                         {(entities as string[]).map((entity) => (
                           <span
                             key={entity}
-                            className="px-3 py-1 text-sm bg-primary-50 text-primary-700 rounded-full"
+                            className="px-3 py-1 text-sm bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full font-medium border border-primary-100 dark:border-primary-800/40"
                           >
                             {entity}
                           </span>
@@ -266,53 +782,141 @@ export default function CaseDetail() {
             )}
 
             {/* Full Text */}
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">{t('case.fullText')}</h2>
-              {caseItem.plain_text ? (
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{t('case.fullText')}</h2>
+                <div className="flex items-center gap-2">
+                  {displayText && displayText.length > 50 && (
+                    <button
+                      onClick={handleFormatText}
+                      disabled={isFormatting}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-primary-900/50 border border-primary-200 dark:border-primary-800/40 transition-all disabled:opacity-50"
+                    >
+                      {isFormatting ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5" />
+                      )}
+                      {formattedText
+                        ? (showFormatted ? t('case.showOriginal') : t('case.showFormatted'))
+                        : isFormatting
+                        ? t('case.formatting')
+                        : t('case.aiFormat')}
+                    </button>
+                  )}
+                  {needsTruncation && (
+                    <button
+                      onClick={() => setTextExpanded(!textExpanded)}
+                      className="flex items-center gap-1.5 text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium transition-colors"
+                    >
+                      {textExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          {t('case.showLess')}
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          {t('case.viewMore')} ({displayText.length.toLocaleString()} {t('case.chars')})
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+              {formatError && (
+                <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/40 rounded-lg">
+                  <p className="text-xs text-red-600 dark:text-red-400">{t('case.formatError')}</p>
+                </div>
+              )}
+              {displayText ? (
                 <div className="prose max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                    {caseItem.plain_text.substring(0, 2000)}
-                    {caseItem.plain_text.length > 2000 && '...'}
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed whitespace-pre-wrap font-mono text-sm bg-gray-50 dark:bg-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700">
+                    {showFormatted && formattedText
+                      ? formattedText
+                      : textToShow}
                   </p>
+                  {formattedText && displayText.length > textToShow.length && !textExpanded && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                      {t('case.formattedVersion')}
+                    </p>
+                  )}
                 </div>
               ) : (
-                <p className="text-gray-500">{t('case.fullTextUnavailable')}</p>
+                <div className="text-center py-6">
+                  <p className="text-gray-500 dark:text-gray-400 mb-2">{t('case.fullTextUnavailable')}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">{t('case.textUnavailableReason')}</p>
+                  {caseItem?.source_url && (
+                    <a
+                      href={caseItem.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/30 border border-primary-200 dark:border-primary-800/40 transition-colors"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      {t('case.viewSource')}
+                    </a>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Similar Cases */}
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <h2 className="text-xl font-semibold mb-4">{t('case.similar')}</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-colors duration-300 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('case.similar')}</h2>
               {similarCases.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   {similarCases.map((sc) => (
                     <div
                       key={sc.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition cursor-pointer"
+                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
                       onClick={() => navigate(`/cases/${sc.id}`)}
                     >
                       <div>
-                        <h3 className="text-primary-600 font-medium hover:underline">
+                        <h3 className="text-primary-600 dark:text-primary-400 font-medium hover:underline text-sm">
                           {sc.case_name}
                         </h3>
-                        <p className="text-sm text-gray-500">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                           {sc.court || t('common.noData')} &middot; {sc.date_filed ? new Date(sc.date_filed).toLocaleDateString() : t('common.noData')}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span className="text-sm font-medium text-primary-600">
-                          {t('case.similarity')}: {(sc.similarity * 100).toFixed(0)}%
-                        </span>
-                      </div>
+                      <span className="text-xs font-medium text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-900/30 px-2 py-1 rounded-full">
+                        {(sc.similarity * 100).toFixed(0)}{t('case.match')}
+                      </span>
                     </div>
                   ))}
                 </div>
+              ) : !hasToken ? (
+                <div className="text-center py-6">
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.similarLoginRequired')}</p>
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium"
+                  >
+                    {t('nav.login')}
+                  </button>
+                </div>
+              ) : !canSimilar ? (
+                <div className="text-center py-6">
+                  <div className="flex items-center justify-center gap-2 mb-3">
+                    <Lock className="h-4 w-4 text-amber-500" />
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{t('case.lockedFeature')}</span>
+                  </div>
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.lockedFeatureDesc')}</p>
+                  <button
+                    onClick={() => navigate('/upgrade')}
+                    className="px-4 py-2 bg-primary-600 dark:bg-primary-500 text-white rounded-xl hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors text-sm font-medium flex items-center gap-2 mx-auto"
+                  >
+                    <Zap className="h-4 w-4" />
+                    {t('upgrade.upgradePro')}
+                  </button>
+                </div>
               ) : (
                 <div className="text-center py-6">
-                  <p className="text-gray-500 mb-4">{t('case.noSimilar')}</p>
+                  <p className="text-gray-500 dark:text-gray-400 mb-3 text-sm">{t('case.noSimilar')}</p>
                   <button
                     onClick={() => casesApi.getSimilar(caseId)}
-                    className="text-primary-600 hover:underline font-medium"
+                    className="text-primary-600 dark:text-primary-400 hover:underline font-medium text-sm"
                   >
                     {t('case.findSimilar')} &rarr;
                   </button>
@@ -322,6 +926,16 @@ export default function CaseDetail() {
           </div>
         )}
       </div>
+
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(4px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   )
 }

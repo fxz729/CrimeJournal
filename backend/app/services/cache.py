@@ -46,25 +46,27 @@ class CacheService:
         self.password = password
         self.key_prefix = key_prefix
         self._client: Optional[redis.Redis] = None
+        self._available: bool = True  # Redis是否可用，False时降级
 
     async def initialize(self) -> None:
-        """初始化Redis连接"""
-        self._client = redis.Redis(
-            host=self.host,
-            port=self.port,
-            db=self.db,
-            password=self.password,
-            decode_responses=True,
-            encoding="utf-8"
-        )
-
-        # 测试连接
+        """初始化Redis连接，Redis不可用时优雅降级"""
         try:
+            self._client = redis.Redis(
+                host=self.host,
+                port=self.port,
+                db=self.db,
+                password=self.password,
+                decode_responses=True,
+                encoding="utf-8"
+            )
             await self._client.ping()
+            self._available = True
             logger.info(f"Redis连接成功: {self.host}:{self.port}/{self.db}")
         except Exception as e:
-            logger.error(f"Redis连接失败: {str(e)}")
-            raise
+            self._available = False
+            self._client = None
+            logger.warning(f"Redis连接失败，使用内存降级模式: {str(e)}")
+            # 不抛出异常，允许服务继续运行（降级模式）
 
     async def close(self) -> None:
         """关闭Redis连接"""
@@ -86,6 +88,8 @@ class CacheService:
         Returns:
             缓存值，不存在返回None
         """
+        if not self._available:
+            return None
         try:
             full_key = self._build_key(key)
             value = await self._client.get(full_key)
@@ -120,6 +124,8 @@ class CacheService:
         Returns:
             是否成功
         """
+        if not self._available:
+            return False
         try:
             full_key = self._build_key(key)
 
@@ -149,6 +155,8 @@ class CacheService:
         Returns:
             是否成功
         """
+        if not self._available:
+            return False
         try:
             full_key = self._build_key(key)
             result = await self._client.delete(full_key)
@@ -160,6 +168,8 @@ class CacheService:
 
     async def exists(self, key: str) -> bool:
         """检查键是否存在"""
+        if not self._available:
+            return False
         try:
             full_key = self._build_key(key)
             return await self._client.exists(full_key) > 0
@@ -230,6 +240,8 @@ class CacheService:
 
     async def incr(self, key: str, amount: int = 1) -> int:
         """递增计数器"""
+        if not self._available:
+            return 0
         try:
             full_key = self._build_key(key)
             return await self._client.incrby(full_key, amount)
@@ -239,6 +251,8 @@ class CacheService:
 
     async def get_ttl(self, key: str) -> int:
         """获取键的剩余TTL（秒）"""
+        if not self._available:
+            return -1
         try:
             full_key = self._build_key(key)
             return await self._client.ttl(full_key)
@@ -248,6 +262,8 @@ class CacheService:
 
     async def expire(self, key: str, ttl: int) -> bool:
         """设置键的过期时间"""
+        if not self._available:
+            return False
         try:
             full_key = self._build_key(key)
             return await self._client.expire(full_key, ttl)
@@ -257,6 +273,8 @@ class CacheService:
 
     async def health_check(self) -> bool:
         """健康检查"""
+        if not self._available:
+            return False
         try:
             pong = await self._client.ping()
             return pong is True
@@ -329,4 +347,19 @@ class AIServiceCache:
     async def get_cached_keywords(self, text_hash: str) -> Optional[list]:
         """获取缓存的关键词"""
         key = f"keywords:{text_hash}"
+        return await self.cache.get(key)
+
+    async def cache_formatted_text(
+        self,
+        text_hash: str,
+        formatted_text: str,
+        ttl: int = CacheService.LONG_TTL
+    ) -> bool:
+        """缓存整理后的文本"""
+        key = f"formatted:{text_hash}"
+        return await self.cache.set(key, formatted_text, ttl)
+
+    async def get_cached_formatted_text(self, text_hash: str) -> Optional[str]:
+        """获取缓存的整理后文本"""
+        key = f"formatted:{text_hash}"
         return await self.cache.get(key)

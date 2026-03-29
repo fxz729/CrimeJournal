@@ -3,10 +3,9 @@ pytest配置和共享fixtures
 
 提供测试数据库、测试客户端、Mock服务等
 """
-import asyncio
 import os
 import sys
-from typing import AsyncGenerator, Generator
+from typing import AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
 
@@ -29,16 +28,9 @@ os.environ.setdefault("JWT_EXPIRATION_HOURS", "24")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
 os.environ.setdefault("DEBUG", "true")
-
-
-# ==================== 事件循环Fixture ====================
-
-@pytest.fixture(scope="session")
-def event_loop() -> Generator:
-    """创建session级别的事件循环"""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
+os.environ.setdefault("DEEPSEEK_API_KEY", "test-deepseek-key")
+os.environ.setdefault("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+os.environ.setdefault("DEEPSEEK_MODEL", "deepseek-chat")
 
 
 # ==================== Mock服务 ====================
@@ -320,6 +312,60 @@ class MockAIService:
         return True
 
 
+class MockDeepSeekService:
+    """Mock DeepSeek AI服务（用于翻译和格式整理）"""
+
+    def __init__(self, api_key: str, model: str = "deepseek-chat", **kwargs):
+        self.api_key = api_key
+        self.model = model
+        self._initialized = False
+
+    async def initialize(self) -> None:
+        self._initialized = True
+
+    async def close(self) -> None:
+        self._initialized = False
+
+    async def generate(
+        self,
+        prompt: str,
+        system_prompt: str = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2000,
+        **kwargs
+    ) -> str:
+        """Mock生成文本"""
+        if "translate" in prompt.lower() or "翻译" in prompt:
+            return "This is a mock translated text."
+        elif "format" in prompt.lower() or "整理" in prompt or "优化" in prompt:
+            return "This is a mock formatted text."
+        else:
+            return "Mock DeepSeek response"
+
+    async def translate(self, text: str, target_language: str = "English", source_language: str = "auto") -> str:
+        """Mock翻译"""
+        return f"Translated to {target_language}: {text[:50]}..."
+
+    async def format_text(self, text: str) -> str:
+        """Mock格式整理"""
+        return f"Formatted: {text[:100]}..."
+
+    async def extract_entities(self, text: str, entity_types: list = None) -> dict:
+        return {"defendants": ["Mock Defendant DS"], "courts": ["Mock Court DS"]}
+
+    async def summarize(self, text: str, max_length: int = 500) -> str:
+        return f"Mock DeepSeek summary ({len(text)} chars)"
+
+    async def extract_keywords(self, text: str, top_n: int = 10) -> list:
+        return ["deepseek", "mock", "keywords"]
+
+    async def classify(self, text: str, categories: list) -> str:
+        return categories[0] if categories else "unknown"
+
+    async def health_check(self) -> bool:
+        return True
+
+
 class MockCacheService:
     """Mock Redis缓存服务"""
 
@@ -412,6 +458,16 @@ class MockAIServiceCache:
 # ==================== 应用Fixture ====================
 
 @pytest_asyncio.fixture
+async def initialized_client():
+    """提供已初始化的CourtListener客户端（供所有测试类使用）"""
+    from app.services.courtlistener import CourtListenerClient
+    client = CourtListenerClient(api_key="test-api-key")
+    await client.initialize()
+    yield client
+    await client.close()
+
+
+@pytest_asyncio.fixture
 async def mock_courtlistener():
     """提供Mock CourtListener客户端"""
     client = MockCourtListenerClient()
@@ -433,6 +489,20 @@ async def mock_cache_service():
 def mock_ai_service():
     """提供Mock AI服务"""
     return MockAIService("test-key", "test-model")
+
+
+@pytest.fixture
+def mock_ai_router():
+    """提供Mock AI路由器（用于依赖注入覆盖）"""
+    router = MagicMock()
+    router.summarize_case = AsyncMock(return_value="Mock summary")
+    router.extract_entities = AsyncMock(return_value={"defendants": ["Mock Defendant"], "courts": ["Mock Court"]})
+    router.extract_keywords = AsyncMock(return_value=["mock", "test", "keywords"])
+    router.translate_case = AsyncMock(return_value="Mock DeepSeek translated text")
+    router.format_text_case = AsyncMock(return_value="Mock DeepSeek formatted text")
+    router.health_check_all = AsyncMock(return_value={"minimax": True, "deepseek": True})
+    router.get_service_status = MagicMock(return_value={"minimax": True, "deepseek": True})
+    return router
 
 
 @pytest.fixture
@@ -465,11 +535,78 @@ def test_user_data(test_user_email, test_user_password):
 
 # ==================== FastAPI测试客户端 ====================
 
+# 使用 module-level patch (而非 dependency_overrides)
+# 原因：httpx 0.27 AsyncClient + ASGITransport 下 dependency_overrides
+# 与 MagicMock 配合会产生 422 验证错误，改用 patch 可确保所有测试
+# （包括 async_client 和 client）都能正确 mock 服务
+
+@pytest.fixture(autouse=True)
+def mock_services():
+    """自动 mock 所有服务（autouse），避免每个测试手动 patch
+
+    注意：此 fixture 仅为向后兼容保留。实际的依赖注入覆盖
+    在 app fixture 的 dependency_overrides 中完成。
+    """
+    from app.api import cases as cases_module
+
+    # 保存原始函数引用
+    orig_get_courtlistener = cases_module.get_courtlistener
+    orig_get_ai_router = cases_module.get_ai_router
+    orig_get_cache = cases_module.get_cache
+
+    yield
+
+    # 恢复原始函数
+    cases_module.get_courtlistener = orig_get_courtlistener
+    cases_module.get_ai_router = orig_get_ai_router
+    cases_module.get_cache = orig_get_cache
+
+
 @pytest.fixture
 def app():
-    """创建测试应用实例"""
-    from app.main import app
-    return app
+    """创建测试应用实例，使用 dependency_overrides mock 所有服务"""
+    from app.main import app as _app
+    from app.api.cases import get_courtlistener, get_ai_router, get_cache, _check_subscription_feature
+
+    # Patch _check_subscription_feature 让所有测试用户都有 Pro 订阅权限
+    import app.api.cases as cases_module
+    _orig_check = cases_module._check_subscription_feature
+    cases_module._check_subscription_feature = lambda user_id, feature: True
+
+    # 每次创建新的 mock 实例，确保测试间隔离
+    mock_cl_instance = MockCourtListenerClient()
+    mock_cache_instance = MockCacheService()
+    mock_router_instance = MagicMock()
+    mock_router_instance.summarize_case = AsyncMock(return_value="Mock summary")
+    mock_router_instance.extract_entities = AsyncMock(
+        return_value={"defendants": ["Mock Defendant"], "courts": ["Mock Court"]}
+    )
+    mock_router_instance.extract_keywords = AsyncMock(return_value=["mock", "test", "keywords"])
+    mock_router_instance.translate_case = AsyncMock(return_value="Mock DeepSeek translated text")
+    mock_router_instance.format_text_case = AsyncMock(return_value="Mock DeepSeek formatted text")
+    mock_router_instance.health_check_all = AsyncMock(return_value={"minimax": True, "deepseek": True})
+    mock_router_instance.get_service_status = MagicMock(return_value={"minimax": True, "deepseek": True})
+
+    # 使用 FastAPI 官方 dependency_overrides 机制
+    def override_get_courtlistener():
+        return mock_cl_instance
+
+    def override_get_ai_router():
+        return mock_router_instance
+
+    def override_get_cache():
+        return mock_cache_instance
+
+    _app.dependency_overrides[get_courtlistener] = override_get_courtlistener
+    _app.dependency_overrides[get_ai_router] = override_get_ai_router
+    _app.dependency_overrides[get_cache] = override_get_cache
+
+    yield _app
+
+    # 清理 overrides
+    _app.dependency_overrides.clear()
+    # 恢复原始函数
+    cases_module._check_subscription_feature = _orig_check
 
 
 @pytest.fixture
@@ -519,11 +656,21 @@ def auth_headers(create_auth_token, test_user_email):
 
 @pytest.fixture(autouse=True)
 def clear_fake_db():
-    """每个测试前后清空Fake数据库"""
+    """每个测试前后清空SQLite users表"""
     from app.api import auth as auth_module
-    # 保存原始数据库
-    auth_original = auth_module.FAKE_USERS_DB.copy()
-    auth_module.FAKE_USERS_DB.clear()
+    # 清空SQLite中的users表
+    try:
+        SessionLocal = auth_module.get_session_local()
+        db = SessionLocal()
+        try:
+            db.query(auth_module.DBUser).delete()
+            db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()
+    except Exception:
+        pass  # Database not yet initialized
 
     # 保存search模块的fake数据库
     import app.api.search as search_module
@@ -532,25 +679,42 @@ def clear_fake_db():
     search_module.FAKE_SEARCH_HISTORY.clear()
     search_module.FAKE_FAVORITES.clear()
 
+    # 重置rate limit数据库（防止测试间耗尽60请求/分钟限制）
+    import app.middleware.rate_limit as rate_limit_module
+    rate_limit_module._rate_limit_db.clear()
+
     yield
 
     # 恢复
-    auth_module.FAKE_USERS_DB.clear()
-    auth_module.FAKE_USERS_DB.update(auth_original)
     search_module.FAKE_SEARCH_HISTORY.clear()
     search_module.FAKE_SEARCH_HISTORY.update(search_history_original)
     search_module.FAKE_FAVORITES.clear()
     search_module.FAKE_FAVORITES.update(favorites_original)
+    rate_limit_module._rate_limit_db.clear()
+
+    # 清空SQLite中的users表（恢复后）
+    try:
+        SessionLocal = auth_module.get_session_local()
+        db = SessionLocal()
+        try:
+            db.query(auth_module.DBUser).delete()
+            db.commit()
+        except Exception:
+            db.rollback()
+        finally:
+            db.close()
+    except Exception:
+        pass
 
 
 # ==================== 重置全局服务实例 ====================
 
 @pytest.fixture(autouse=True)
 def reset_global_services():
-    """每个测试后重置全局服务实例"""
+    """每个测试后重置 app.state 服务实例"""
     yield
-    # 重置cases.py中的全局服务实例
-    import app.api.cases as cases_module
-    cases_module._courtlistener_client = None
-    cases_module._ai_router = None
-    cases_module._cache_service = None
+    # 重置 app.state 中的服务实例
+    from app.main import app as _app
+    _app.state._courtlistener_client = None
+    _app.state._ai_router = None
+    _app.state._cache_service = None

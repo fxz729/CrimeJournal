@@ -1,8 +1,9 @@
-"""AI服务智能路由器 - 使用 MiniMax 作为主要服务"""
+"""AI服务智能路由器 - 使用 MiniMax 和 DeepSeek"""
 import logging
 from typing import Dict, List, Optional, Any
 from enum import Enum
 from .minimax import MiniMaxService
+from .deepseek import DeepSeekService
 from .base import AIServiceBase
 
 logger = logging.getLogger(__name__)
@@ -15,16 +16,19 @@ class TaskType(Enum):
     KEYWORD_EXTRACTION = "keyword_extraction"  # 关键词提取
     CLASSIFICATION = "classification"          # 文本分类
     GENERAL_QA = "general_qa"                # 通用问答
+    TRANSLATION = "translation"                # 文本翻译
+    TEXT_FORMATTING = "text_formatting"       # 文本格式整理
 
 
 class AIRouter:
     """
     AI服务智能路由器
 
-    使用 MiniMax 作为唯一AI服务，统一提供所有AI功能
+    使用 MiniMax 提供总结、实体提取等能力
+    使用 DeepSeek 提供翻译、格式整理能力
     """
 
-    # 任务类型到服务的映射（全部使用 MiniMax）
+    # 任务类型到服务的映射
     TASK_SERVICE_MAP = {
         TaskType.CASE_SUMMARIZATION: [
             ("minimax", 1.0),    # MiniMax 擅长总结
@@ -40,18 +44,26 @@ class AIRouter:
         ],
         TaskType.GENERAL_QA: [
             ("minimax", 1.0),    # MiniMax 通用能力强
+        ],
+        TaskType.TRANSLATION: [
+            ("deepseek", 1.0),   # DeepSeek 翻译能力
+        ],
+        TaskType.TEXT_FORMATTING: [
+            ("deepseek", 1.0),   # DeepSeek 文本格式整理
         ]
     }
 
     def __init__(
         self,
         minimax_service: Optional[MiniMaxService] = None,
+        deepseek_service: Optional[DeepSeekService] = None,
     ):
         """
         初始化路由器
 
         Args:
             minimax_service: MiniMax服务实例
+            deepseek_service: DeepSeek服务实例
         """
         self.services: Dict[str, AIServiceBase] = {}
         self.service_status: Dict[str, bool] = {}
@@ -59,6 +71,9 @@ class AIRouter:
         if minimax_service:
             self.services["minimax"] = minimax_service
             self.service_status["minimax"] = True
+        if deepseek_service:
+            self.services["deepseek"] = deepseek_service
+            self.service_status["deepseek"] = True
 
         logger.info(f"路由器初始化完成，可用服务: {list(self.services.keys())}")
 
@@ -185,6 +200,29 @@ class AIRouter:
             method_name="classify",
             text=text,
             categories=categories
+        )
+
+    async def translate_case(
+        self,
+        text: str,
+        target_language: str = "English",
+        source_language: str = "auto",
+    ) -> str:
+        """文本翻译"""
+        return await self.route(
+            task_type=TaskType.TRANSLATION,
+            method_name="translate",
+            text=text,
+            target_language=target_language,
+            source_language=source_language,
+        )
+
+    async def format_text_case(self, text: str) -> str:
+        """文本格式整理"""
+        return await self.route(
+            task_type=TaskType.TEXT_FORMATTING,
+            method_name="format_text",
+            text=text,
         )
 
     async def health_check_all(self) -> Dict[str, bool]:

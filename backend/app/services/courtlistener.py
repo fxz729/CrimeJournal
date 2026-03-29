@@ -1,5 +1,6 @@
 """CourtListener API客户端"""
 import logging
+import re
 from typing import Dict, List, Optional, Any
 import httpx
 from datetime import datetime
@@ -7,15 +8,52 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
+def _extract_plain_text(opinion_data: Dict[str, Any]) -> str:
+    """
+    从 opinion 数据中提取纯文本。
+
+    优先级：plain_text > html > html_with_citations (XML)
+    """
+    # 1. plain_text 字段
+    plain_text = opinion_data.get("plain_text", "")
+    if plain_text and len(plain_text.strip()) > 100:
+        return plain_text.strip()
+
+    # 2. html 字段
+    html = opinion_data.get("html", "")
+    if html and len(html.strip()) > 100:
+        return _html_to_text(html)
+
+    # 3. html_with_citations 字段 (XML 格式)
+    xml_content = opinion_data.get("html_with_citations", "")
+    if xml_content and len(xml_content.strip()) > 100:
+        return _html_to_text(xml_content)
+
+    return ""
+
+
+def _html_to_text(html: str) -> str:
+    """将 HTML/XML 内容转换为纯文本。"""
+    if not html:
+        return ""
+    # 移除 XML/HTML 标签，保留文本
+    text = re.sub(r'<[^>]+>', ' ', html)
+    # 规范化空白字符
+    text = re.sub(r'[\s\u200b\xa0]+', ' ', text).strip()
+    # 移除多余的空格
+    text = re.sub(r' +', ' ', text)
+    return text
+
+
 class CourtListenerClient:
     """
     CourtListener API客户端
 
     用于查询美国法院判例数据
-    API文档: https://www.courtlistener.com/api/rest/v3/
+    API文档: https://www.courtlistener.com/api/rest/v4/
     """
 
-    BASE_URL = "https://www.courtlistener.com/api/rest/v3"
+    BASE_URL = "https://www.courtlistener.com/api/rest/v4"
 
     def __init__(self, api_key: Optional[str] = None):
         """
@@ -94,6 +132,21 @@ class CourtListenerClient:
             response.raise_for_status()
             data = response.json()
 
+            # v4 搜索结果直接在顶层，不需要取 cluster 嵌套
+            results = data.get("results", [])
+            # 标准化：兼容 v3 格式（v3 results 嵌套在 cluster 中）
+            normalized_results = []
+            for item in results:
+                # v4: 字段直接在顶层，v3: 字段在 cluster 中
+                if "cluster" in item:
+                    # v3 格式
+                    cluster = item.get("cluster", item)
+                    normalized_results.append(cluster)
+                else:
+                    # v4 格式：直接在 item 顶层
+                    normalized_results.append(item)
+
+            data["results"] = normalized_results
             logger.info(f"搜索到 {data.get('count', 0)} 条判例")
             return data
 
@@ -112,12 +165,34 @@ class CourtListenerClient:
             opinion_id: 意见ID
 
         Returns:
-            判例详情
+            判例详情（包含 cluster 和 docket 信息，以及纯文本）
         """
         try:
             response = await self._client.get(f"/opinions/{opinion_id}/")
             response.raise_for_status()
-            return response.json()
+            opinion_data = response.json()
+
+            # 提取纯文本（优先 plain_text > html > html_with_citations）
+            plain_text = _extract_plain_text(opinion_data)
+            opinion_data["plain_text"] = plain_text
+
+            # v4: cluster 是 URL，需要额外请求获取 cluster 详情
+            cluster_url = opinion_data.get("cluster")
+            if cluster_url:
+                cluster_response = await self._client.get(cluster_url)
+                cluster_response.raise_for_status()
+                cluster_data = cluster_response.json()
+                opinion_data["cluster"] = cluster_data
+
+                # 获取 docket 信息（包含 court_id）
+                docket_url = cluster_data.get("docket")
+                if docket_url:
+                    docket_response = await self._client.get(docket_url)
+                    docket_response.raise_for_status()
+                    docket_data = docket_response.json()
+                    opinion_data["docket"] = docket_data
+
+            return opinion_data
 
         except httpx.HTTPStatusError as e:
             logger.error(f"获取判例失败: {e.response.status_code}")
@@ -140,6 +215,7 @@ class CourtListenerClient:
             意见列表
         """
         try:
+            # v4: docket opinions endpoint
             response = await self._client.get(f"/dockets/{docket_id}/opinions/")
             response.raise_for_status()
             data = response.json()
@@ -197,6 +273,8 @@ class CourtListenerClient:
         Returns:
             引用网络数据
         """
+        # v4 中 citation network endpoint 可能返回 HTML 或需要特殊权限
+        # 降级处理：返回空结果
         endpoint = f"/{citation_type}/{cite_urn}/"
 
         try:
@@ -205,11 +283,11 @@ class CourtListenerClient:
             return response.json()
 
         except httpx.HTTPStatusError as e:
-            logger.error(f"获取引用网络失败: {e.response.status_code}")
-            raise
+            logger.warning(f"获取引用网络失败（可能需要 Premium）: {e.response.status_code}")
+            return {"results": []}
         except Exception as e:
-            logger.error(f"获取引用网络异常: {str(e)}")
-            raise
+            logger.warning(f"获取引用网络异常: {str(e)}")
+            return {"results": []}
 
     async def get_cluster_by_id(self, cluster_id: int) -> Dict[str, Any]:
         """
@@ -219,12 +297,33 @@ class CourtListenerClient:
             cluster_id: 簇ID
 
         Returns:
-            簇详情
+            簇详情（包含 docket 信息和第一个意见的文本）
         """
         try:
             response = await self._client.get(f"/clusters/{cluster_id}/")
             response.raise_for_status()
-            return response.json()
+            cluster_data = response.json()
+
+            # v4: 获取 docket 信息（包含 court_id）
+            docket_url = cluster_data.get("docket")
+            if docket_url:
+                docket_response = await self._client.get(docket_url)
+                docket_response.raise_for_status()
+                cluster_data["docket"] = docket_response.json()
+
+            # 获取第一个意见的文本和引用信息
+            sub_opinions = cluster_data.get("sub_opinions", [])
+            if sub_opinions:
+                first_opinion_url = sub_opinions[0]
+                opinion_response = await self._client.get(first_opinion_url)
+                opinion_response.raise_for_status()
+                first_opinion = opinion_response.json()
+                # 提取纯文本（优先 plain_text > html > html_with_citations）
+                plain_text = _extract_plain_text(first_opinion)
+                first_opinion["plain_text"] = plain_text
+                cluster_data["_first_opinion"] = first_opinion
+
+            return cluster_data
 
         except httpx.HTTPStatusError as e:
             logger.error(f"获取簇信息失败: {e.response.status_code}")

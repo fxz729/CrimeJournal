@@ -49,9 +49,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative flex items-center">
           {leftIcon && (
-            <span className="absolute left-3 text-gray-400 pointer-events-none flex-shrink-0">
+            <div className="absolute left-0 top-0 bottom-0 flex items-center pl-3.5 pointer-events-none">
               {leftIcon}
-            </span>
+            </div>
           )}
           <input
             ref={ref}
@@ -79,9 +79,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {rightIcon && (
-            <span className="absolute right-3 text-gray-400 pointer-events-none flex-shrink-0">
+            <div className="absolute right-0 top-0 bottom-0 flex items-center pr-3.5 pointer-events-none">
               {rightIcon}
-            </span>
+            </div>
           )}
         </div>
         {hasError && (

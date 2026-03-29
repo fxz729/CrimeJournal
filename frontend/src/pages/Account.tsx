@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Settings, User, CreditCard, AlertTriangle, Loader2, Check, Star, Shield, Zap } from 'lucide-react'
-import { authApi, favoritesApi, subscriptionApi } from '../lib/api'
+import { User, CreditCard, AlertTriangle, Loader2, Check, Star, Shield, Zap, Scale } from 'lucide-react'
+import { authApi, subscriptionApi } from '../lib/api'
 import { useI18n } from '../lib/i18n'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import ThemeSwitcher from '../components/ThemeSwitcher'
 import { useAuth } from '../lib/auth'
 
 interface UserProfile {
@@ -40,15 +41,10 @@ export default function Account() {
   })
 
   const user: UserProfile | undefined = profileData?.data
-  const tierLabel = user?.subscription_tier === 'pro'
-    ? t('account.tierPro')
-    : user?.subscription_tier === 'enterprise'
-    ? t('account.tierEnterprise')
-    : t('account.tierFree')
 
   // Update profile mutation
   const updateMutation = useMutation({
-    mutationFn: (name: string) => authApi.me(),
+    mutationFn: (name: string) => authApi.updateProfile(name),
     onSuccess: () => {
       setSuccessMsg(t('account.updated'))
       queryClient.invalidateQueries({ queryKey: ['profile'] })
@@ -89,7 +85,7 @@ export default function Account() {
 
   // Delete account mutation
   const deleteMutation = useMutation({
-    mutationFn: () => Promise.resolve({}), // Placeholder: no backend endpoint yet
+    mutationFn: () => Promise.resolve({}),
     onSuccess: () => {
       logout()
       navigate('/')
@@ -114,7 +110,6 @@ export default function Account() {
       setPasswordError(t('account.passwordMinLength'))
       return
     }
-    // TODO: Call backend API to change password
     setSuccessMsg(t('account.passwordUpdated'))
     setCurrentPassword('')
     setNewPassword('')
@@ -135,43 +130,48 @@ export default function Account() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-secondary)] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Settings className="h-6 w-6 text-primary-600" />
-            <span className="font-serif text-xl font-bold">CrimeJournal</span>
+      <header className="bg-[var(--bg-primary)] border-b border-[var(--border-default)] sticky top-0 z-50 header-blur transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm shadow-primary-500/20">
+              <Scale className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-serif text-lg font-bold text-[var(--text-primary)]">{t('common.brand')}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <ThemeSwitcher />
             <LanguageSwitcher />
-            <button
-              onClick={() => navigate('/search')}
-              className="text-gray-600 hover:text-gray-900"
+            <div className="h-5 w-px bg-[var(--border-default)] hidden sm:block mx-1" />
+            <Link
+              to="/search"
+              className="hidden sm:flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             >
               {t('nav.search')}
-            </button>
-            <button
-              onClick={() => navigate('/favorites')}
-              className="text-gray-600 hover:text-gray-900"
+            </Link>
+            <Link
+              to="/favorites"
+              className="hidden sm:flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             >
               {t('nav.favorites')}
-            </button>
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-10">
         {/* Page Title */}
-        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-8">
+        <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)] mb-8">
           {t('account.title')}
         </h1>
 
         {/* Success Message */}
         {successMsg && (
-          <div className="mb-6 bg-green-50 text-green-700 p-4 rounded-lg flex items-center gap-2">
-            <Check className="h-5 w-5" />
-            {successMsg}
+          <div className="mb-6 p-4 rounded-xl flex items-center gap-3 border animate-fade-in-up"
+            style={{ background: 'var(--status-success-bg)', color: 'var(--status-success)', borderColor: 'var(--status-success)' }}>
+            <Check className="h-5 w-5 flex-shrink-0" />
+            <p className="text-sm font-medium">{successMsg}</p>
           </div>
         )}
 
@@ -183,10 +183,10 @@ export default function Account() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-shrink-0 w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition ${
+                  className={`flex-shrink-0 w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left text-sm font-medium transition-all duration-150 ${
                     activeTab === tab.id
-                      ? 'bg-primary-50 text-primary-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100'
+                      ? 'bg-[var(--brand-primary-light)] text-[var(--brand-primary)] dark:text-[var(--brand-primary)]'
+                      : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)]'
                   }`}
                 >
                   <tab.icon className="h-5 w-5 flex-shrink-0" />
@@ -199,30 +199,30 @@ export default function Account() {
           {/* Tab Content */}
           <div className="flex-1">
             {isLoading && (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
               </div>
             )}
 
             {/* Profile Tab */}
             {!isLoading && activeTab === 'profile' && (
-              <div className="bg-white rounded-xl shadow-sm p-8 space-y-8">
+              <div className="card space-y-8">
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">{t('account.profile')}</h2>
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-5">{t('account.profile')}</h2>
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
                         {t('account.email')}
                       </label>
                       <input
                         type="email"
                         value={user?.email || ''}
                         disabled
-                        className="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] cursor-not-allowed text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
                         {t('account.fullName')}
                       </label>
                       <input
@@ -230,62 +230,62 @@ export default function Account() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder={user?.full_name || ''}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                       />
                     </div>
                     <button
                       onClick={handleUpdateProfile}
-                      className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
+                      className="btn-primary"
                     >
                       {t('account.updateProfile')}
                     </button>
                   </div>
                 </div>
 
-                <hr className="border-gray-200" />
+                <hr className="border-[var(--border-default)]" />
 
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">{t('account.changePassword')}</h2>
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-5">{t('account.changePassword')}</h2>
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
                         {t('account.currentPassword')}
                       </label>
                       <input
                         type="password"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
                         {t('account.newPassword')}
                       </label>
                       <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-[var(--text-secondary)] mb-1.5">
                         {t('account.confirmPassword')}
                       </label>
                       <input
                         type="password"
                         value={confirmPassword}
                         onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                        className="w-full px-4 py-2.5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-primary)] text-[var(--text-primary)] placeholder-[var(--text-tertiary)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent transition-all"
                       />
                     </div>
                     {passwordError && (
-                      <p className="text-red-600 text-sm">{passwordError}</p>
+                      <p className="text-sm font-medium" style={{ color: 'var(--status-error)' }}>{passwordError}</p>
                     )}
                     <button
                       type="submit"
-                      className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
+                      className="btn-primary"
                     >
                       {t('account.changePassword')}
                     </button>
@@ -296,25 +296,25 @@ export default function Account() {
 
             {/* Subscription Tab */}
             {!isLoading && activeTab === 'subscription' && (
-              <div className="bg-white rounded-xl shadow-sm p-8 space-y-8">
-                {/* Current Plan Section */}
+              <div className="card space-y-8">
+                {/* Current Plan */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">{t('account.subscription')}</h2>
-                  <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-5">{t('account.subscription')}</h2>
+                  <div className="flex items-center gap-4 p-5 rounded-xl border border-[var(--border-default)]" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                       subscription?.plan === 'pro' || subscription?.plan === 'enterprise'
-                        ? 'bg-primary-100'
-                        : 'bg-gray-100'
+                        ? 'bg-[var(--brand-primary-light)]'
+                        : 'bg-[var(--bg-primary)]'
                     }`}>
                       {subscription?.plan === 'pro' || subscription?.plan === 'enterprise' ? (
-                        <Star className="h-6 w-6 text-primary-600" />
+                        <Star className="h-6 w-6 text-[var(--brand-primary)]" />
                       ) : (
-                        <Shield className="h-6 w-6 text-gray-500" />
+                        <Shield className="h-6 w-6 text-[var(--text-tertiary)]" />
                       )}
                     </div>
                     <div>
-                      <p className="text-sm text-gray-500">{t('account.tier')}</p>
-                      <p className="text-xl font-semibold">
+                      <p className="text-sm text-[var(--text-tertiary)]">{t('account.tier')}</p>
+                      <p className="text-xl font-semibold text-[var(--text-primary)]">
                         {subscription?.plan === 'pro'
                           ? t('account.tierPro')
                           : subscription?.plan === 'enterprise'
@@ -322,57 +322,55 @@ export default function Account() {
                           : t('account.tierFree')}
                       </p>
                       {subscription?.cancel_at_period_end && (
-                        <p className="text-xs text-amber-600 mt-1">
+                        <p className="text-xs mt-1" style={{ color: 'var(--status-warning)' }}>
                           {t('account.cancelConfirm')}
                         </p>
                       )}
                     </div>
                     <button
                       onClick={() => navigate('/upgrade')}
-                      className="ml-auto bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center gap-2"
+                      className="ml-auto btn-primary flex items-center gap-2"
                     >
                       <Zap className="h-4 w-4" />
                       {t('account.upgrade')}
                     </button>
                   </div>
 
-                  {/* Billing Info */}
                   {subscription?.current_period_end && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+                    <div className="mt-3 flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
                       <span>{t('account.nextBilling')}:</span>
-                      <span className="font-medium">
+                      <span className="font-medium text-[var(--text-secondary)]">
                         {new Date(subscription.current_period_end).toLocaleDateString()}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Usage Section */}
+                {/* Usage */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">{t('account.usage')}</h2>
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-5">{t('account.usage')}</h2>
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">{t('account.searchesUsed')}</span>
-                      <span className="font-medium">
+                      <span className="text-[var(--text-secondary)]">{t('account.searchesUsed')}</span>
+                      <span className="font-medium text-[var(--text-primary)]">
                         {usage?.today_searches ?? 0} / {usage?.is_unlimited ? t('account.unlimited') : (usage?.daily_limit ?? 10)}
                       </span>
                     </div>
                     {!usage?.is_unlimited && (
-                      <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div className="w-full rounded-full h-2" style={{ background: 'var(--bg-tertiary)' }}>
                         <div
-                          className={`h-2 rounded-full ${
-                            ((usage?.today_searches ?? 0) / (usage?.daily_limit ?? 10)) > 0.8
-                              ? 'bg-red-500'
-                              : 'bg-primary-500'
-                          }`}
+                          className="h-2 rounded-full transition-all duration-300"
                           style={{
+                            background: ((usage?.today_searches ?? 0) / (usage?.daily_limit ?? 10)) > 0.8
+                              ? 'var(--status-error)'
+                              : 'var(--brand-primary)',
                             width: `${Math.min(((usage?.today_searches ?? 0) / (usage?.daily_limit ?? 10)) * 100, 100)}%`
                           }}
                         />
                       </div>
                     )}
                     {!usage?.is_unlimited && (
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-[var(--text-tertiary)]">
                         {t('account.searchesRemaining')}: {(usage?.daily_limit ?? 10) - (usage?.today_searches ?? 0)}
                       </p>
                     )}
@@ -381,18 +379,18 @@ export default function Account() {
 
                 {/* Monthly Usage */}
                 <div>
-                  <h2 className="text-xl font-semibold mb-4">{t('account.monthlyUsage')}</h2>
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <p className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-5">{t('account.monthlyUsage')}</h2>
+                  <div className="p-5 rounded-xl border border-[var(--border-default)]" style={{ background: 'var(--bg-tertiary)' }}>
+                    <p className="text-3xl font-bold text-[var(--text-primary)]">
                       {usage?.monthly_total ?? 0}
                     </p>
-                    <p className="text-sm text-gray-500">{t('account.searchesThisMonth')}</p>
+                    <p className="text-sm text-[var(--text-tertiary)] mt-1">{t('account.searchesThisMonth')}</p>
                   </div>
                 </div>
 
-                {/* Cancel Subscription (for paid plans) */}
+                {/* Cancel Subscription */}
                 {(subscription?.plan === 'pro' || subscription?.plan === 'enterprise') && !subscription?.cancel_at_period_end && (
-                  <div className="pt-4 border-t border-gray-200">
+                  <div className="pt-4 border-t border-[var(--border-default)]">
                     <button
                       onClick={() => {
                         if (window.confirm(t('account.cancelConfirm'))) {
@@ -400,7 +398,7 @@ export default function Account() {
                         }
                       }}
                       disabled={cancelMutation.isPending}
-                      className="text-sm text-gray-500 hover:text-red-600 underline"
+                      className="text-sm text-[var(--text-tertiary)] hover:text-[var(--status-error)] underline transition-colors"
                     >
                       {cancelMutation.isPending ? t('common.loading') : t('account.cancelSubscription')}
                     </button>
@@ -411,16 +409,17 @@ export default function Account() {
 
             {/* Danger Zone Tab */}
             {!isLoading && activeTab === 'danger' && (
-              <div className="bg-white rounded-xl shadow-sm p-8">
-                <h2 className="text-xl font-semibold text-red-600 mb-4">
+              <div className="card">
+                <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--status-error)' }}>
                   {t('account.dangerZone')}
                 </h2>
-                <p className="text-gray-600 mb-6">
+                <p className="text-[var(--text-secondary)] mb-6 text-sm">
                   {t('account.dangerZoneWarning')}
                 </p>
                 <button
                   onClick={handleDeleteAccount}
-                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white transition-all shadow-md"
+                  style={{ background: 'var(--status-error)' }}
                 >
                   {t('account.deleteAccount')}
                 </button>

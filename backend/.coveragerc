@@ -1,0 +1,12 @@
+[run]
+omit =
+    app/models/*
+    app/utils/*
+    app/main.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+    pass

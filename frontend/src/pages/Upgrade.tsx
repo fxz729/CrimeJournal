@@ -1,13 +1,14 @@
 import { useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  Check, Zap, Shield, Users, Globe, ArrowLeft,
-  Loader2, Star, Crown, ChevronRight, CreditCard
+  Check, Shield,
+  Loader2, Star, Crown, ChevronRight, Scale
 } from 'lucide-react'
-import { subscriptionApi, authApi } from '../lib/api'
+import { subscriptionApi } from '../lib/api'
 import { useI18n } from '../lib/i18n'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import ThemeSwitcher from '../components/ThemeSwitcher'
 import { useAuth } from '../lib/auth'
 
 interface PlanInfo {
@@ -15,6 +16,7 @@ interface PlanInfo {
   name: string
   price: number
   price_monthly: number
+  display_price?: number
   searches_per_day: number
   ai_summaries: boolean
   entity_extraction: boolean
@@ -33,17 +35,14 @@ export default function Upgrade() {
 
   const [upgradeSuccess, setUpgradeSuccess] = useState(false)
 
-  // Check if redirected from success
   const success = searchParams.get('success')
   const canceled = searchParams.get('canceled')
 
-  // Fetch available plans
   const { data: plansData, isLoading: plansLoading } = useQuery({
     queryKey: ['subscriptionPlans'],
     queryFn: () => subscriptionApi.getPlans(),
   })
 
-  // Fetch current subscription
   const { data: subscriptionData } = useQuery({
     queryKey: ['subscription'],
     queryFn: () => subscriptionApi.getMySubscription(),
@@ -53,15 +52,12 @@ export default function Upgrade() {
   const plans: Record<string, PlanInfo> = plansData?.data || {}
   const currentPlan = subscriptionData?.data?.plan || 'free'
 
-  // Upgrade mutation
   const upgradeMutation = useMutation({
     mutationFn: (plan: string) => subscriptionApi.upgrade(plan),
     onSuccess: (response) => {
       if (response.data.checkout_url) {
-        // In real Stripe integration, redirect to Stripe
         window.location.href = response.data.checkout_url
       } else {
-        // Mock mode: directly upgrade
         setUpgradeSuccess(true)
         queryClient.invalidateQueries({ queryKey: ['subscription'] })
         queryClient.invalidateQueries({ queryKey: ['profile'] })
@@ -77,24 +73,31 @@ export default function Upgrade() {
     upgradeMutation.mutate(planId)
   }
 
-  const plansList = Object.values(plans)
+  const checkIconClass = 'h-5 w-5 flex-shrink-0'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[var(--bg-secondary)] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
+      <header className="bg-[var(--bg-primary)] border-b border-[var(--border-default)] sticky top-0 z-50 header-blur transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm shadow-primary-500/20">
+                <Scale className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-serif text-lg font-bold text-[var(--text-primary)]">{t('common.brand')}</span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <ThemeSwitcher />
+            <LanguageSwitcher />
+            <div className="h-5 w-px bg-[var(--border-default)] hidden sm:block mx-1" />
             <button
               onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
+              className="hidden sm:flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="font-serif text-xl font-bold">CrimeJournal</span>
+              {t('nav.back')}
             </button>
-          </div>
-          <div className="flex items-center gap-4">
-            <LanguageSwitcher />
           </div>
         </div>
       </header>
@@ -102,105 +105,104 @@ export default function Upgrade() {
       <div className="max-w-6xl mx-auto px-4 py-12">
         {/* Success Banner */}
         {(success === 'true' || upgradeSuccess) && (
-          <div className="mb-8 bg-green-50 border border-green-200 text-green-800 p-6 rounded-xl flex items-center gap-3">
-            <Check className="h-6 w-6" />
+          <div className="mb-8 p-5 rounded-xl flex items-center gap-3 border animate-fade-in-up"
+            style={{ background: 'var(--status-success-bg)', color: 'var(--status-success)', borderColor: 'var(--status-success)' }}>
+            <Check className="h-6 w-6 flex-shrink-0" />
             <div>
               <p className="font-semibold text-lg">{t('upgrade.success')}</p>
-              <p className="text-sm">{t('upgrade.successDesc')}</p>
+              <p className="text-sm opacity-80">{t('upgrade.successDesc')}</p>
             </div>
           </div>
         )}
 
         {/* Canceled Banner */}
         {canceled === 'true' && (
-          <div className="mb-8 bg-amber-50 border border-amber-200 text-amber-800 p-6 rounded-xl flex items-center gap-3">
-            <CreditCard className="h-6 w-6" />
+          <div className="mb-8 p-5 rounded-xl flex items-center gap-3 border animate-fade-in-up"
+            style={{ background: 'var(--status-warning-bg)', color: 'var(--status-warning)', borderColor: 'var(--status-warning)' }}>
+            <Shield className="h-6 w-6 flex-shrink-0" />
             <div>
               <p className="font-semibold text-lg">{t('upgrade.canceled')}</p>
-              <p className="text-sm">{t('upgrade.canceledDesc')}</p>
+              <p className="text-sm opacity-80">{t('upgrade.canceledDesc')}</p>
             </div>
           </div>
         )}
 
-        {/* Page Title */}
+        {/* Title */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-serif font-bold text-gray-900 mb-4">
+          <h1 className="text-4xl font-serif font-bold text-[var(--text-primary)] mb-4">
             {t('upgrade.title')}
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto">
             {t('upgrade.subtitle')}
           </p>
         </div>
 
-        {/* Loading State */}
+        {/* Loading */}
         {plansLoading && (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
           </div>
         )}
 
-        {/* Plans Grid */}
+        {/* Plans */}
         {!plansLoading && (
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {/* Free Plan */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col">
+            <div className="card flex flex-col">
               <div className="mb-6">
-                <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center mb-4">
-                  <Shield className="h-6 w-6 text-gray-500" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--bg-tertiary)' }}>
+                  <Shield className="h-6 w-6 text-[var(--text-tertiary)]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">
                   {plans.free?.name || t('upgrade.freePlan')}
                 </h3>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
                   {plans.free?.description || t('upgrade.freeDesc')}
                 </p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold text-gray-900">
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-[var(--text-primary)]">
                     ${plans.free?.price || 0}
                   </span>
-                  <span className="text-gray-500">{t('upgrade.perMonth')}</span>
+                  <span className="text-sm text-[var(--text-tertiary)]">{t('upgrade.perMonth')}</span>
                 </div>
               </div>
 
               <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.f10searches')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.basicInfo')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.searchHistory')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <span className="h-5 w-5 flex items-center justify-center">-</span>
-                  <span>{t('upgrade.aiSummaries')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <span className="h-5 w-5 flex items-center justify-center">-</span>
-                  <span>{t('upgrade.entityExtraction')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-400">
-                  <span className="h-5 w-5 flex items-center justify-center">-</span>
-                  <span>{t('upgrade.similarCases')}</span>
-                </li>
+                {[
+                  { text: t('upgrade.f10searches'), enabled: true },
+                  { text: t('upgrade.basicInfo'), enabled: true },
+                  { text: t('upgrade.searchHistory'), enabled: true },
+                  { text: t('upgrade.aiSummaries'), enabled: false },
+                  { text: t('upgrade.entityExtraction'), enabled: false },
+                  { text: t('upgrade.similarCases'), enabled: false },
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-sm">
+                    {item.enabled ? (
+                      <Check className={checkIconClass} style={{ color: 'var(--status-success)' }} />
+                    ) : (
+                      <span className="w-5 h-5 flex items-center justify-center text-[var(--text-tertiary)]">—</span>
+                    )}
+                    <span className={item.enabled ? 'text-[var(--text-secondary)]' : 'text-[var(--text-tertiary)]'}>
+                      {item.text}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="mt-6 pt-5 border-t border-[var(--border-default)]">
                 {currentPlan === 'free' ? (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium cursor-not-allowed"
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
                   >
                     {t('upgrade.currentPlan')}
                   </button>
                 ) : (
                   <button
                     onClick={() => navigate('/account')}
-                    className="w-full py-3 px-4 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium border border-[var(--border-default)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     {t('upgrade.downgrade')}
                   </button>
@@ -209,64 +211,57 @@ export default function Upgrade() {
             </div>
 
             {/* Pro Plan */}
-            <div className="relative bg-gradient-to-b from-primary-50 to-white rounded-2xl shadow-xl border-2 border-primary-500 p-8 flex flex-col transform md:scale-105">
+            <div className="relative card flex flex-col border-2 shadow-lg" style={{ borderColor: 'var(--brand-primary)' }}>
               {/* Popular Badge */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <span className="bg-primary-500 text-white text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold text-white shadow-md"
+                  style={{ background: 'var(--brand-primary)' }}>
                   {t('upgrade.mostPopular')}
                 </span>
               </div>
 
               <div className="mb-6">
-                <div className="w-12 h-12 bg-primary-100 rounded-xl flex items-center justify-center mb-4">
-                  <Star className="h-6 w-6 text-primary-600" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'var(--brand-primary-light)' }}>
+                  <Star className="h-6 w-6 text-[var(--brand-primary)]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">
                   {plans.pro?.name || t('upgrade.proPlan')}
                 </h3>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
                   {plans.pro?.description || t('upgrade.proDesc')}
                 </p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold text-gray-900">
-                    ${plans.pro?.price || 50}
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-[var(--text-primary)]">
+                    ${plans.pro?.display_price ?? plans.pro?.price ?? 2.9}
                   </span>
-                  <span className="text-gray-500">{t('upgrade.perMonth')}</span>
+                  <span className="text-sm text-[var(--text-tertiary)]">{t('upgrade.perMonth')}</span>
                 </div>
               </div>
 
               <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span className="font-medium">{t('upgrade.unlimited')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.basicInfo')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.searchHistory')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-primary-500 flex-shrink-0" />
-                  <span>{t('upgrade.aiSummaries')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-primary-500 flex-shrink-0" />
-                  <span>{t('upgrade.entityExtraction')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-primary-500 flex-shrink-0" />
-                  <span>{t('upgrade.similarCases')}</span>
-                </li>
+                {[
+                  { text: t('upgrade.unlimited'), highlight: false },
+                  { text: t('upgrade.basicInfo'), highlight: false },
+                  { text: t('upgrade.searchHistory'), highlight: false },
+                  { text: t('upgrade.aiSummaries'), highlight: true },
+                  { text: t('upgrade.entityExtraction'), highlight: true },
+                  { text: t('upgrade.similarCases'), highlight: true },
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-sm">
+                    <Check className={checkIconClass} style={{ color: 'var(--brand-primary)' }} />
+                    <span className={item.highlight ? 'font-medium text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}>
+                      {item.text}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
-              <div className="mt-6 pt-6 border-t border-primary-100">
+              <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--brand-primary-light)' }}>
                 {currentPlan === 'pro' ? (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-lg bg-primary-100 text-primary-700 cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{ background: 'var(--brand-primary-light)', color: 'var(--brand-primary)' }}
                   >
                     <Check className="h-5 w-5" />
                     {t('upgrade.currentPlan')}
@@ -275,17 +270,18 @@ export default function Upgrade() {
                   <button
                     onClick={() => handleUpgrade('pro')}
                     disabled={upgradeMutation.isPending}
-                    className="w-full py-3 px-4 rounded-lg bg-primary-600 text-white hover:bg-primary-700 transition flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-2 transition-all shadow-md shadow-primary-500/20 hover:-translate-y-px"
+                    style={{ background: 'var(--brand-primary)' }}
                   >
                     {upgradeMutation.isPending ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         {t('upgrade.processing')}
                       </>
                     ) : (
                       <>
                         {t('upgrade.upgradePro')}
-                        <ChevronRight className="h-5 w-5" />
+                        <ChevronRight className="h-4 w-4" />
                       </>
                     )}
                   </button>
@@ -294,65 +290,51 @@ export default function Upgrade() {
             </div>
 
             {/* Enterprise Plan */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 flex flex-col">
+            <div className="card flex flex-col">
               <div className="mb-6">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4">
-                  <Crown className="h-6 w-6 text-purple-600" />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style={{ background: 'rgba(168,85,247,0.1)' }}>
+                  <Crown className="h-6 w-6" style={{ color: '#a855f7' }} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="text-lg font-bold text-[var(--text-primary)]">
                   {plans.enterprise?.name || t('upgrade.enterprisePlan')}
                 </h3>
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-sm text-[var(--text-tertiary)] mt-1">
                   {plans.enterprise?.description || t('upgrade.enterpriseDesc')}
                 </p>
-                <div className="mt-4">
-                  <span className="text-3xl font-bold text-gray-900">
-                    ${plans.enterprise?.price || 500}
+                <div className="mt-4 flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-[var(--text-primary)]">
+                    ${plans.enterprise?.display_price ?? plans.enterprise?.price ?? 5.9}
                   </span>
-                  <span className="text-gray-500">{t('upgrade.perMonth')}</span>
+                  <span className="text-sm text-[var(--text-tertiary)]">{t('upgrade.perMonth')}</span>
                 </div>
               </div>
 
               <ul className="space-y-3 flex-1">
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span className="font-medium">{t('upgrade.unlimited')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.basicInfo')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-green-500 flex-shrink-0" />
-                  <span>{t('upgrade.searchHistory')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                  <span>{t('upgrade.aiSummaries')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                  <span>{t('upgrade.entityExtraction')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                  <span>{t('upgrade.similarCases')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                  <span>{t('upgrade.apiAccess')}</span>
-                </li>
-                <li className="flex items-center gap-3 text-gray-700">
-                  <Check className="h-5 w-5 text-purple-500 flex-shrink-0" />
-                  <span>{t('upgrade.teamAccounts')}</span>
-                </li>
+                {[
+                  { text: t('upgrade.unlimited'), highlight: false },
+                  { text: t('upgrade.basicInfo'), highlight: false },
+                  { text: t('upgrade.searchHistory'), highlight: false },
+                  { text: t('upgrade.aiSummaries'), highlight: true },
+                  { text: t('upgrade.entityExtraction'), highlight: true },
+                  { text: t('upgrade.similarCases'), highlight: true },
+                  { text: t('upgrade.apiAccess'), highlight: true },
+                  { text: t('upgrade.teamAccounts'), highlight: true },
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-3 text-sm">
+                    <Check className={checkIconClass} style={{ color: '#a855f7' }} />
+                    <span className={item.highlight ? 'font-medium text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}>
+                      {item.text}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
-              <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="mt-6 pt-5 border-t border-[var(--border-default)]">
                 {currentPlan === 'enterprise' ? (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-lg bg-purple-100 text-purple-700 cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium cursor-not-allowed flex items-center justify-center gap-2"
+                    style={{ background: 'rgba(168,85,247,0.1)', color: '#a855f7' }}
                   >
                     <Check className="h-5 w-5" />
                     {t('upgrade.currentPlan')}
@@ -361,17 +343,18 @@ export default function Upgrade() {
                   <button
                     onClick={() => handleUpgrade('enterprise')}
                     disabled={upgradeMutation.isPending}
-                    className="w-full py-3 px-4 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-px"
+                    style={{ background: '#7c3aed' }}
                   >
                     {upgradeMutation.isPending ? (
                       <>
-                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         {t('upgrade.processing')}
                       </>
                     ) : (
                       <>
-                        {t('upgrade.contactSales')}
-                        <ChevronRight className="h-5 w-5" />
+                        {t('upgrade.upgradeEnterprise')}
+                        <ChevronRight className="h-4 w-4" />
                       </>
                     )}
                   </button>
@@ -381,30 +364,28 @@ export default function Upgrade() {
           </div>
         )}
 
-        {/* FAQ Section */}
+        {/* FAQ */}
         <div className="mt-16 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-serif font-bold text-gray-900 text-center mb-8">
+          <h2 className="text-2xl font-serif font-bold text-[var(--text-primary)] text-center mb-8">
             {t('upgrade.faqTitle')}
           </h2>
           <div className="space-y-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">{t('upgrade.faqBilling')}</h3>
-              <p className="text-gray-600 text-sm">{t('upgrade.faqBillingAns')}</p>
-            </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">{t('upgrade.faqCancel')}</h3>
-              <p className="text-gray-600 text-sm">{t('upgrade.faqCancelAns')}</p>
-            </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-2">{t('upgrade.faqPayment')}</h3>
-              <p className="text-gray-600 text-sm">{t('upgrade.faqPaymentAns')}</p>
-            </div>
+            {[
+              { q: t('upgrade.faqBilling'), a: t('upgrade.faqBillingAns') },
+              { q: t('upgrade.faqCancel'), a: t('upgrade.faqCancelAns') },
+              { q: t('upgrade.faqPayment'), a: t('upgrade.faqPaymentAns') },
+            ].map((item, idx) => (
+              <div key={idx} className="card">
+                <h3 className="font-semibold text-[var(--text-primary)] mb-2">{item.q}</h3>
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">{item.a}</p>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Stripe Note */}
         <div className="mt-12 text-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-[var(--text-tertiary)]">
             {t('upgrade.stripeNote')}
           </p>
         </div>

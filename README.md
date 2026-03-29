@@ -1,250 +1,121 @@
-# CrimeJournal - AI-Powered Legal Case Research Platform
+# CrimeJournal
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/Python-3.11+-green.svg)
-![React](https://img.shields.io/badge/React-18-blue.svg)
+AI 驱动的法律案例研究平台，基于 FastAPI + React 构建。
 
-**CrimeJournal** is a zero-cost, AI-powered legal case research platform built for independent lawyers and small law firms. It provides instant access to millions of legal cases with AI-generated summaries, entity extraction, and similarity search - at 1/10th the cost of traditional services like Westlaw.
+## 环境准备
 
-## Key Features
+### 前置依赖
 
-- **Smart Search** - Natural language search across millions of legal cases from CourtListener
-- **AI Summaries** - MiniMax-powered case summarization for quick understanding
-- **Entity Extraction** - Automatically extract parties, dates, statutes, and legal terms
-- **Similar Cases** - AI-powered similarity search to find related precedents
-- **Search History** - Track and revisit your research
-- **Favorites** - Save important cases for quick access
-- **Responsive Design** - Works on desktop and mobile
+- Python 3.10+
+- Node.js 18+
+- npm 或 pnpm
 
-## Architecture
+### 安装依赖
 
-```
-+---------+     +---------+     +--------+
-| Browser|---->| Vercel  |---->| Render |
-| React  |     |Frontend |     | FastAPI|
-+---------+     +---------+     +----+---+
-                                   |
-                    +--------------+---------------+
-                    |              |               |
-                    v              v               v
-              +----------+  +-------------+  +-----------+
-              | MiniMax  |  |CourtListener|  | PostgreSQL|
-              |   API    |  |    API     |  | (Supabase)|
-              +----------+  +-------------+  +-----------+
-```
-
-## Tech Stack
-
-### Backend
-- **Python 3.11+** - FastAPI, SQLAlchemy, Pydantic
-- **AI Services** - MiniMax (unified AI service)
-- **Database** - PostgreSQL (Supabase) + SQLite (local)
-- **Cache** - Redis (Upstash)
-- **Embeddings** - Sentence-Transformers (local, free)
-
-### Frontend
-- **React 18** + TypeScript
-- **Vite** - Build tool
-- **Tailwind CSS** - Styling
-- **React Query** - Data fetching
-- **React Router** - Navigation
-
-### Deployment
-- **Frontend** - Vercel (free)
-- **Backend** - Render (free tier)
-- **Database** - Supabase PostgreSQL (500MB free)
-- **CI/CD** - GitHub Actions (auto-deploy)
-
-## Quick Start
-
-### Prerequisites
-
-1. **Accounts Required** (all free):
-   - [GitHub](https://github.com) - Code hosting
-   - [Vercel](https://vercel.com) - Frontend deployment
-   - [Render](https://render.com) - Backend deployment
-   - [Supabase](https://supabase.com) - Database
-   - [CourtListener](https://www.courtlistener.com) - Legal data
-   - [MiniMax](https://platform.minimax.chat) - AI API
-
-2. **Local Environment**:
-   - Python 3.11+
-   - Node.js 18+
-   - Git
-
-### Local Development
-
+**后端**
 ```bash
-# 1. Clone the repository
-git clone https://github.com/your-username/CrimeJournal.git
-cd CrimeJournal
-
-# 2. Setup Backend
 cd backend
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env  # Edit .env with your API keys
-uvicorn app.main:app --reload --port 8000
+```
 
-# 3. Setup Frontend (new terminal)
+**前端**
+```bash
 cd frontend
 npm install
+```
+
+## 启动开发服务器
+
+### 后端
+
+```bash
+cd backend
+python -m app.main
+```
+
+服务地址：http://localhost:8000
+API 文档：http://localhost:8000/docs
+
+### 前端
+
+```bash
+cd frontend
 npm run dev
 ```
 
-### Environment Variables
+服务地址：http://localhost:5173（或终端显示的端口）
 
-Create `backend/.env` with:
+> 前端已配置 `/api` 代理到 `http://localhost:8000`，无需额外配置。
 
-```env
-# MiniMax (for summaries, entities, keywords)
-MINIMAX_API_KEY=your_minimax_api_key_here
+## 关闭服务器
+
+- 在运行终端按 `Ctrl+C`
+- 或通过任务管理器结束进程
+
+## 环境变量配置
+
+后端根目录下的 `.env` 文件：
+
+```bash
+# MiniMax AI（总结、实体提取、关键词）
+MINIMAX_API_KEY=your_minimax_api_key
 MINIMAX_BASE_URL=https://api.minimax.chat/v1
-MINIMAX_MODEL=MiniMax-Text-02
+MINIMAX_MODEL=MiniMax-M2.7
 
-# CourtListener (free legal data)
-COURTLISTENER_API_TOKEN=your_token
+# DeepSeek AI（翻译、格式整理）
+DEEPSEEK_API_KEY=your_deepseek_api_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/v1
 
-# Database
+# CourtListener 法律数据库
+COURTLISTENER_API_TOKEN=your_courtlistener_token
+
+# 数据库
 DATABASE_URL=sqlite:///./crimejournal.db
 
+# Redis（可选，开发环境自动降级到内存）
+REDIS_URL=redis://localhost:6379
+
 # JWT
-JWT_SECRET_KEY=your-secret-key-here
-
-# Embedding Model (local, free)
-EMBEDDING_MODEL=all-MiniLM-L6-v2
+JWT_SECRET_KEY=your_secret_key_at_least_32_chars
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
 ```
 
-## API Endpoints
+## 运行测试
 
-### Authentication
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Register new user |
-| POST | `/api/auth/login` | Login and get token |
-| GET | `/api/auth/me` | Get current user |
-
-### Cases
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/search` | Search cases |
-| GET | `/api/cases/{id}` | Get case details |
-| POST | `/api/cases/{id}/summarize` | AI summary |
-| POST | `/api/cases/{id}/entities` | Extract entities |
-| POST | `/api/cases/{id}/keywords` | Extract keywords |
-| GET | `/api/cases/{id}/similar` | Find similar cases |
-
-### History & Favorites
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/history` | Get search history |
-| DELETE | `/api/history/{id}` | Delete history item |
-| GET | `/api/favorites` | Get favorites |
-| POST | `/api/favorites` | Add to favorites |
-| DELETE | `/api/favorites/{id}` | Remove from favorites |
-
-## Deployment
-
-### Automated Deployment (Recommended)
-
-1. Push code to GitHub
-2. Connect repo to Vercel (frontend) and Render (backend)
-3. Add secrets to GitHub Actions:
-   - `RENDER_API_KEY`
-   - `VERCEL_TOKEN`
-   - `MINIMAX_API_KEY`
-   - `COURTLISTENER_API_TOKEN`
-4. GitHub Actions will auto-deploy on push
-
-### Manual Deployment
-
-**Backend (Render)**:
 ```bash
-# Create render.yaml or deploy via dashboard
-render deploy
+cd backend
+pytest                          # 全部测试
+pytest tests/test_auth.py       # 单文件
+pytest -v --cov=app --cov-report=term-missing  # 带覆盖率
 ```
 
-**Frontend (Vercel)**:
-```bash
-cd frontend
-vercel --prod
-```
-
-## Subscription Plans
-
-| Plan | Price | Features |
-|------|-------|----------|
-| Free | $0/mo | 10 searches/day, basic info |
-| Pro | $50/mo | Unlimited, AI summaries, similarity |
-| Enterprise | $500/mo | Pro + API access, team accounts |
-
-## Project Structure
+## 项目结构
 
 ```
 CrimeJournal/
 ├── backend/
 │   ├── app/
-│   │   ├── api/          # API routes
-│   │   ├── models/       # Database models
-│   │   ├── services/     # Business logic
-│   │   │   ├── ai/       # MiniMax AI service
-│   │   │   ├── courtlistener.py
-│   │   │   └── cache.py
-│   │   ├── utils/        # Utilities
-│   │   ├── main.py       # FastAPI app
-│   │   └── config.py     # Configuration
-│   ├── tests/            # Test files
-│   ├── migrations/       # DB migrations
-│   └── requirements.txt
-├── frontend/
-│   ├── src/
-│   │   ├── pages/        # Page components
-│   │   ├── components/   # Reusable components
-│   │   ├── lib/          # Utilities
-│   │   ├── App.tsx       # Main app
-│   │   └── main.tsx      # Entry point
-│   ├── package.json
-│   └── vite.config.ts
-├── .github/workflows/     # CI/CD
-├── render.yaml           # Backend deployment
-├── vercel.json           # Frontend deployment
-└── README.md
+│   │   ├── api/          # API 路由（认证、案例、搜索、订阅）
+│   │   ├── services/     # 服务层
+│   │   │   └── ai/       # AI 服务（MiniMax、DeepSeek、路由器）
+│   │   ├── middleware/    # 中间件（用量限制、审计）
+│   │   └── main.py       # FastAPI 入口
+│   └── tests/            # 测试文件
+└── frontend/
+    ├── src/
+    │   ├── pages/         # 页面组件
+    │   ├── lib/          # 工具（API、认证、i18n、主题）
+    │   └── App.tsx       # 路由配置
+    └── vite.config.ts     # Vite 配置（含 API 代理）
 ```
 
-## Running Tests
+## 技术栈
 
-```bash
-cd backend
-pytest --cov=app --cov-report=html
-```
-
-## Cost Analysis
-
-| Service | Monthly Cost |
-|---------|-------------|
-| Vercel (Frontend) | $0 |
-| Render (Backend) | $0 |
-| Supabase (Database) | $0 |
-| MiniMax API | ~$3-8 |
-| **Total** | **$3-8/mo** |
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see [LICENSE](LICENSE) for details.
-
-## Acknowledgments
-
-- [CourtListener](https://www.courtlistener.com) - Free legal case data
-- [MiniMax](https://platform.minimax.chat) - AI capabilities
-- [Supabase](https://supabase.com) - Database infrastructure
-- [Vercel](https://vercel.com) - Frontend hosting
-- [Render](https://render.com) - Backend hosting
+| 层级 | 技术 |
+|------|------|
+| 前端 | React, TypeScript, Vite, Tailwind CSS |
+| 后端 | FastAPI, SQLAlchemy, Pydantic |
+| AI | MiniMax M2.7（总结/实体）、DeepSeek V3.2（翻译/格式） |
+| 数据源 | CourtListener API v3/v4 |
+| 数据库 | SQLite（开发） |

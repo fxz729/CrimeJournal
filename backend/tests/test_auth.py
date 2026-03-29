@@ -13,7 +13,6 @@ from app.api.auth import (
     verify_password,
     create_access_token,
     decode_token,
-    FAKE_USERS_DB,
 )
 
 
@@ -252,11 +251,18 @@ class TestAuthAPI:
         # 注册用户
         client.post("/api/auth/register", json=test_user_data)
 
-        # 手动禁用用户
-        for user_id, user in auth_module.FAKE_USERS_DB.items():
-            if user["email"] == test_user_data["email"]:
-                user["is_active"] = False
-                break
+        # 手动禁用用户（直接修改SQLite）
+        SessionLocal = auth_module.get_session_local()
+        db = SessionLocal()
+        try:
+            user = db.query(auth_module.DBUser).filter(
+                auth_module.DBUser.email == test_user_data["email"]
+            ).first()
+            if user:
+                user.is_active = False
+                db.commit()
+        finally:
+            db.close()
 
         # 尝试登录
         response = client.post("/api/auth/login", json={
@@ -291,7 +297,7 @@ class TestAuthAPI:
     def test_get_current_user_no_token(self, client: TestClient):
         """无Token访问"""
         response = client.get("/api/auth/me")
-        assert response.status_code == 403  # HTTPBearer默认返回403
+        assert response.status_code == 401  # HTTPBearer默认返回401
 
     def test_get_current_user_invalid_token(self, client: TestClient):
         """无效Token访问"""
@@ -357,7 +363,7 @@ class TestAuthAPI:
     def test_logout_no_token(self, client: TestClient):
         """无Token登出"""
         response = client.post("/api/auth/logout")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     # ==================== Token刷新 ====================
 
@@ -384,7 +390,7 @@ class TestAuthAPI:
     def test_refresh_token_no_auth(self, client: TestClient):
         """无认证刷新Token"""
         response = client.post("/api/auth/refresh")
-        assert response.status_code == 403
+        assert response.status_code == 401
 
 
 class TestAuthIntegration:

@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Star, Trash2, FileText, Calendar, MapPin, Loader2, AlertCircle } from 'lucide-react'
+import { Star, Trash2, FileText, Calendar, MapPin, Loader2, Scale } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { favoritesApi } from '../lib/api'
 import { useI18n } from '../lib/i18n'
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import { useAuth } from '../lib/auth'
+import ThemeSwitcher from '../components/ThemeSwitcher'
 
 interface FavoriteItem {
   id: number
@@ -17,11 +18,10 @@ interface FavoriteItem {
 
 export default function Favorites() {
   const navigate = useNavigate()
-  const { t } = useI18n()
-  const { user } = useAuth()
+  const { t, language } = useI18n()
   const queryClient = useQueryClient()
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['favorites'],
     queryFn: () => favoritesApi.getAll(),
   })
@@ -39,116 +39,121 @@ export default function Favorites() {
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return t('common.noData')
     try {
-      return new Date(dateStr).toLocaleDateString()
+      return new Date(dateStr).toLocaleDateString(language === 'zh' ? 'zh-CN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' })
     } catch {
       return dateStr
     }
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--bg-secondary)] transition-colors duration-300">
       {/* Header */}
-      <header className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <Star className="h-5 w-5" />
-              <span className="font-serif text-xl font-bold">CrimeJournal</span>
-            </button>
+      <header className="bg-[var(--bg-primary)] border-b border-[var(--border-default)] sticky top-0 z-50 header-blur transition-colors duration-300">
+        <div className="max-w-7xl mx-auto px-4 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-primary-500 flex items-center justify-center shadow-sm shadow-primary-500/20">
+              <Scale className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-serif text-lg font-bold text-[var(--text-primary)]">{t('common.brand')}</span>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <ThemeSwitcher />
             <LanguageSwitcher />
-            <button
-              onClick={() => navigate('/search')}
-              className="text-gray-600 hover:text-gray-900"
+            <div className="h-5 w-px bg-[var(--border-default)] hidden sm:block mx-1" />
+            <Link
+              to="/search"
+              className="hidden sm:flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             >
               {t('nav.search')}
-            </button>
-            <button
-              onClick={() => navigate('/account')}
-              className="text-gray-600 hover:text-gray-900"
+            </Link>
+            <Link
+              to="/account"
+              className="hidden sm:flex items-center px-3 py-1.5 rounded-lg text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
             >
               {t('nav.account')}
-            </button>
+            </Link>
           </div>
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-10">
         {/* Page Title */}
         <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-serif font-bold text-[var(--text-primary)] mb-2">
             {t('favorites.title')}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-[var(--text-secondary)]">
             {t('favorites.total')}: {total}
           </p>
         </div>
 
-        {/* Loading State */}
+        {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-24">
-            <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-            <span className="ml-3 text-gray-600">{t('common.loading')}</span>
+            <Loader2 className="h-8 w-8 animate-spin text-[var(--brand-primary)]" />
+            <span className="ml-3 text-[var(--text-secondary)]">{t('common.loading')}</span>
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
-            <span>{t('common.loadingFailed')}</span>
+        {/* Error */}
+        {isError && (
+          <div className="card text-center py-12">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4" style={{ background: 'var(--status-error-bg)' }}>
+              <Star className="h-6 w-6" style={{ color: 'var(--status-error)' }} />
+            </div>
+            <p className="text-[var(--text-secondary)]">{t('common.loadingFailed')}</p>
           </div>
         )}
 
-        {/* Empty State */}
-        {!isLoading && !error && favorites.length === 0 && (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-            <Star className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">{t('favorites.empty')}</h3>
-            <p className="text-gray-600 mb-6">{t('favorites.emptyDesc')}</p>
+        {/* Empty */}
+        {!isLoading && !isError && favorites.length === 0 && (
+          <div className="card text-center py-16">
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: 'var(--bg-tertiary)' }}>
+              <Star className="h-7 w-7 text-[var(--text-tertiary)]" />
+            </div>
+            <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">{t('favorites.empty')}</h3>
+            <p className="text-[var(--text-secondary)] mb-6 text-sm max-w-sm mx-auto">{t('favorites.emptyDesc')}</p>
             <button
               onClick={() => navigate('/search')}
-              className="bg-primary-600 text-white px-6 py-2 rounded-lg hover:bg-primary-700"
+              className="btn-primary"
             >
               {t('favorites.browse')}
             </button>
           </div>
         )}
 
-        {/* Favorites List */}
-        {!isLoading && !error && favorites.length > 0 && (
+        {/* List */}
+        {!isLoading && !isError && favorites.length > 0 && (
           <div className="space-y-4">
             {favorites.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition cursor-pointer"
+                className="card hover:shadow-md cursor-pointer group"
                 onClick={() => navigate(`/cases/${item.case_id}`)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-primary-600 hover:underline mb-2">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-[var(--brand-primary)] group-hover:underline mb-2 truncate">
                       {item.case_name}
                     </h3>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
-                        {item.court || t('common.noData')}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
+                    <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-[var(--text-tertiary)]">
+                      {item.court && (
+                        <div className="flex items-center gap-1.5">
+                          <MapPin className="h-3.5 w-3.5" />
+                          <span className="truncate max-w-[200px]">{item.court}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="h-3.5 w-3.5" />
                         {formatDate(item.date_filed)}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <FileText className="h-4 w-4" />
-                        {item.case_id}
+                      <div className="flex items-center gap-1.5 font-mono text-xs px-2 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                        <FileText className="h-3.5 w-3.5" />
+                        #{item.case_id}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
@@ -156,14 +161,14 @@ export default function Favorites() {
                           deleteMutation.mutate(item.id)
                         }
                       }}
-                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                      className="p-2 rounded-lg text-[var(--text-tertiary)] hover:text-[var(--status-error)] hover:bg-[var(--status-error-bg)] transition-all"
                       title={t('favorites.remove')}
                     >
-                      <Trash2 className="h-5 w-5" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
-                    <button className="text-primary-600 hover:underline text-sm font-medium">
+                    <span className="text-xs font-medium text-[var(--brand-primary)] hover:underline hidden sm:inline">
                       {t('case.viewDetails')}
-                    </button>
+                    </span>
                   </div>
                 </div>
               </div>
