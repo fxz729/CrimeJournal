@@ -14,9 +14,6 @@ services:
     region: oregon
     plan: free
 
-    # Python runtime version
-    pythonVersion: "3.11"
-
     # Build: install dependencies from backend/requirements.txt
     buildCommand: |
       cd backend && pip install -r requirements.txt
@@ -30,10 +27,6 @@ services:
 
     # Environment variables
     envVars:
-      # Python
-      - key: PYTHON_VERSION
-        value: "3.11"
-
       # Application
       - key: APP_NAME
         value: CrimeJournal
