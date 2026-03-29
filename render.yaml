@@ -51,7 +51,7 @@ services:
       - key: MINIMAX_BASE_URL
         value: https://api.minimax.chat/v1
       - key: MINIMAX_MODEL
-        value: MiniMax-Text-02
+        value: MiniMax-M2.7-highspeed
 
       # CourtListener API (free legal data)
       # Get your token at: https://www.courtlistener.com/api/token/
