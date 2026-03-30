@@ -6,7 +6,7 @@
   "devCommand": "cd frontend && npm run dev",
   "regions": ["hnd1"],
   "env": {
-    "VITE_API_BASE_URL": "https://crimejournal-api.onrender.com",
+    "VITE_API_URL": "https://crimejournal-api.onrender.com",
     "VITE_APP_NAME": "CrimeJournal"
   },
   "headers": [
